@@ -1,4 +1,4 @@
-# Architecture: Local‑first with LiveStore (template‑aligned)
+# Architecture: Local‑first with LiveStore (studio‑aligned)
 
 This project uses LiveStore to build a local‑first app where the browser is the primary execution and storage environment. Sync is optional and opportunistic via a Cloudflare Durable Object backend.
 
@@ -9,27 +9,27 @@ Core concepts
 - Eventual consistency: Conflicts are resolved deterministically by schema/materializers and LiveStore’s semantics.
 
 Client runtime (browser)
-- LiveStore Provider: `template/src/Root.tsx` wires `LiveStoreProvider` with:
+- LiveStore Provider: `studio/src/Root.tsx` wires `LiveStoreProvider` with:
 	- Persisted adapter using OPFS and both a Worker and SharedWorker for concurrency: `makePersistedAdapter({ storage: { type: 'opfs' }, worker, sharedWorker })`.
-	- `storeId` derived from the `?storeId=` query param for per‑client identity (`template/src/util/store-id.ts`).
+	- `storeId` derived from the `?storeId=` query param for per‑client identity (`studio/src/util/store-id.ts`).
 	- Optional `syncPayload` sent to the server for auth/validation.
 - Web Workers:
-	- App worker: `template/src/livestore.worker.ts` creates the LiveStore worker and configures sync with Cloudflare.
+	- App worker: `studio/src/livestore.worker.ts` creates the LiveStore worker and configures sync with Cloudflare.
 	- Shared worker (from `@livestore/adapter-web`) allows multiple tabs to share a single local engine.
-- Devtools: Vite plugin enables LiveStore DevTools pointed at `template/src/livestore/schema.ts`.
+- Devtools: Vite plugin enables LiveStore DevTools pointed at `studio/src/livestore/schema.ts`.
 
 Data model
-- Schema is defined in `template/src/livestore/schema.ts`:
+- Schema is defined in `studio/src/livestore/schema.ts`:
 	- Tables: SQLite tables (e.g., `todos`) and client documents (e.g., `uiState`).
 	- Events: Versioned event names like `v1.TodoCreated`, `v1.TodoCompleted`, …
 	- Materializers: Map events to state using `State.SQLite.materializers`.
-- Queries live in `template/src/livestore/queries.ts` and are consumed by UI components.
+- Queries live in `studio/src/livestore/queries.ts` and are consumed by UI components.
 
 Sync backend (Cloudflare)
-- Durable Object: `WebSocketServer` extends the LiveStore CF implementation in `template/src/cf-worker/index.ts`.
+- Durable Object: `WebSocketServer` extends the LiveStore CF implementation in `studio/src/cf-worker/index.ts`.
 - Worker entry: `export default makeWorker({ validatePayload, enableCORS: true })`.
 - Validation: `validatePayload` enforces a simple token (`authToken`) during development; replace before production.
-- Wrangler config: `template/wrangler.toml` binds the Durable Object and a D1 database (`DB`) for persistence/backup.
+- Wrangler config: `studio/wrangler.toml` binds the Durable Object and a D1 database (`DB`) for persistence/backup.
 
 Data flow
 1. UI dispatches domain events via LiveStore.
@@ -46,14 +46,14 @@ Security and privacy
 - Do not place PII in logs. Keep `enableCORS` only as needed.
 
 Ports and environments
-- Vite dev server: port 60001 by default (`template/vite.config.ts`).
+- Vite dev server: port 60001 by default (`studio/vite.config.ts`).
 - Cloudflare wrangler (sync): port 8787 in dev (spawned automatically by Vite plugin).
 - Client connects to `VITE_LIVESTORE_SYNC_URL` (set to `http://localhost:8787` in `npm run dev`).
 
 Key files and entry points
-- App root: `template/src/Root.tsx`
-- LiveStore worker: `template/src/livestore.worker.ts`
-- Schema and events: `template/src/livestore/schema.ts`
-- Queries: `template/src/livestore/queries.ts`
-- CF Worker/Durable Object: `template/src/cf-worker/index.ts`
-- Tooling: `template/vite.config.ts`, `template/wrangler.toml`, `template/package.json`
+- App root: `studio/src/Root.tsx`
+- LiveStore worker: `studio/src/livestore.worker.ts`
+- Schema and events: `studio/src/livestore/schema.ts`
+- Queries: `studio/src/livestore/queries.ts`
+- CF Worker/Durable Object: `studio/src/cf-worker/index.ts`
+- Tooling: `studio/vite.config.ts`, `studio/wrangler.toml`, `studio/package.json`

@@ -6,19 +6,19 @@ Goal
 
 Read this first (in this repo)
 - Guidance: `.github/instructions/architecture.md`, `sync-contracts.md`, `dependencies.md`, `onboarding.md`, `tests-and-ci.md`.
-- Template entry points:
-   - Client/provider: `template/src/Root.tsx`
-   - Worker: `template/src/livestore.worker.ts`
-   - Schema/events/materializers: `template/src/livestore/schema.ts`
-   - Queries: `template/src/livestore/queries.ts`
-   - CF Worker/Durable Object: `template/src/cf-worker/index.ts`
-   - Tooling: `template/package.json`, `template/vite.config.ts`, `template/wrangler.toml`
+- studio entry points:
+   - Client/provider: `studio/src/Root.tsx`
+   - Worker: `studio/src/livestore.worker.ts`
+   - Schema/events/materializers: `studio/src/livestore/schema.ts`
+   - Queries: `studio/src/livestore/queries.ts`
+   - CF Worker/Durable Object: `studio/src/cf-worker/index.ts`
+   - Tooling: `studio/package.json`, `studio/vite.config.ts`, `studio/wrangler.toml`
 - Prompts to use: `.github/prompts/*` (bug‑fix, code‑generation, code‑review, tests, migration, security, etc.).
 
 Dev/run facts
 - Node >= 23; `bun run dev` starts Vite (port 60001) and Wrangler (port 8787).
 - Client connects to `VITE_LIVESTORE_SYNC_URL` (set to `http://localhost:8787` by the dev script).
-- Each tab’s replica is identified by `?storeId=...` (see `template/src/util/store-id.ts`).
+- Each tab’s replica is identified by `?storeId=...` (see `studio/src/util/store-id.ts`).
 
 How to behave (priority order)
 1. Make the smallest safe change that implements the request.
@@ -30,10 +30,10 @@ How to behave (priority order)
 7. When unsure about offline/sync behavior, ask a brief clarifying question rather than guessing.
 
 Where to implement typical changes
-- New event/state change: `template/src/livestore/schema.ts` (add versioned event `vN.*` + materializer).
-- UI behavior: component in `template/src/components/*` and queries in `template/src/livestore/queries.ts`.
-- Provider/adapter or sync payloads: `template/src/Root.tsx` and `template/src/livestore.worker.ts`.
-- Server‑side validation or logging: `template/src/cf-worker/index.ts` (update `validatePayload`, avoid PII in logs).
+- New event/state change: `studio/src/livestore/schema.ts` (add versioned event `vN.*` + materializer).
+- UI behavior: component in `studio/src/components/*` and queries in `studio/src/livestore/queries.ts`.
+- Provider/adapter or sync payloads: `studio/src/Root.tsx` and `studio/src/livestore.worker.ts`.
+- Server‑side validation or logging: `studio/src/cf-worker/index.ts` (update `validatePayload`, avoid PII in logs).
 
 What to include in PR descriptions
 - Summary of what changed and why.

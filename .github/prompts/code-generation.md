@@ -7,11 +7,11 @@ Task
 
 Context
 - Files to read: {comma-separated list of files}
-- Schema/events/materializers: `template/src/livestore/schema.ts`
-- Queries/selectors: `template/src/livestore/queries.ts`
-- Provider/adapter: `template/src/Root.tsx`, `template/src/livestore.worker.ts`
-- Sync server validation: `template/src/cf-worker/index.ts`
-- Dev tooling: `template/vite.config.ts`, `template/wrangler.toml`, `template/package.json`
+- Schema/events/materializers: `studio/src/livestore/schema.ts`
+- Queries/selectors: `studio/src/livestore/queries.ts`
+- Provider/adapter: `studio/src/Root.tsx`, `studio/src/livestore.worker.ts`
+- Sync server validation: `studio/src/cf-worker/index.ts`
+- Dev tooling: `studio/vite.config.ts`, `studio/wrangler.toml`, `studio/package.json`
 - Dependencies policy: `.github/instructions/dependencies.md`
 
 Constraints & priorities (in order)
@@ -29,6 +29,6 @@ Deliverables
 Example request
 - Task: "Add a `v1.TodoRenamed` event and UI to rename todos."
 - Files:
-	- `template/src/livestore/schema.ts` (add event + materializer)
-	- `template/src/components/MainSection.tsx` (add rename input/handler dispatching new event)
-	- `template/src/livestore/queries.ts` (adjust query if extra fields needed)
+	- `studio/src/livestore/schema.ts` (add event + materializer)
+	- `studio/src/components/MainSection.tsx` (add rename input/handler dispatching new event)
+	- `studio/src/livestore/queries.ts` (adjust query if extra fields needed)

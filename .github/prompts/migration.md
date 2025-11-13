@@ -8,7 +8,7 @@ Migration summary
 - Rationale: {why change}
 
 Must produce
-1. Forward migration: introduce `v2.*` events and materializers in `template/src/livestore/schema.ts` (keep v1 for backward compatibility when feasible).
+1. Forward migration: introduce `v2.*` events and materializers in `studio/src/livestore/schema.ts` (keep v1 for backward compatibility when feasible).
 2. Optional rollback: notes or script to translate v2 back to v1 shape where possible.
 3. Tests/verification:
    - Create sample v1 state/events

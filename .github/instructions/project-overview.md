@@ -1,4 +1,4 @@
-# Project overview (LiveStore local‑first template)
+# Project overview (LiveStore local‑first studio)
 
 What this is
 - A React + LiveStore TodoMVC app demonstrating a local‑first architecture with optional realtime sync using Cloudflare Durable Objects.
@@ -22,13 +22,13 @@ Stack
 - Cloudflare Worker + Durable Object with D1 binding
 
 Entry points and important files
-- App entry: `template/src/main.tsx`
-- App root/provider: `template/src/Root.tsx`
-- Schema/events/materializers: `template/src/livestore/schema.ts`
-- Queries: `template/src/livestore/queries.ts`
-- LiveStore Worker: `template/src/livestore.worker.ts`
-- CF Worker/Durable Object: `template/src/cf-worker/index.ts`
-- Tooling: `template/vite.config.ts`, `template/wrangler.toml`, `template/package.json`
+- App entry: `studio/src/main.tsx`
+- App root/provider: `studio/src/Root.tsx`
+- Schema/events/materializers: `studio/src/livestore/schema.ts`
+- Queries: `studio/src/livestore/queries.ts`
+- LiveStore Worker: `studio/src/livestore.worker.ts`
+- CF Worker/Durable Object: `studio/src/cf-worker/index.ts`
+- Tooling: `studio/vite.config.ts`, `studio/wrangler.toml`, `studio/package.json`
 
 How to run
 - `bun run dev` starts Vite (port 60001) and Wrangler (port 8787). The client auto‑connects to the sync server.

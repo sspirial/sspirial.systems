@@ -1,7 +1,7 @@
 # Tests & CI (guidance for LiveStore)
 
 Current state
-- The template does not include a test harness yet. Add tests progressively as features grow.
+- The studio does not include a test harness yet. Add tests progressively as features grow.
 
 Recommended checks in CI
 - Typecheck and build: `bun run build` (Vite build) must succeed.

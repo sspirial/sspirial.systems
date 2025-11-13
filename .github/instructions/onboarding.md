@@ -1,7 +1,7 @@
-# Developer onboarding (LiveStore local‑first template)
+# Developer onboarding (LiveStore local‑first studio)
 
 Prerequisites
-- Node >= 23 (see `template/package.json`). Manage versions via nvm.
+- Node >= 23 (see `studio/package.json`). Manage versions via nvm.
 - Bun installed (package manager and script runner).
 - Cloudflare Wrangler (installed via dev dependencies).
 - Modern browser supporting OPFS (Chrome, Edge, Firefox, Safari TP).
@@ -15,21 +15,21 @@ Quick start
    `bun run dev`
    - Vite dev server on port 60001
    - Cloudflare sync server on port 8787
-4. Open `http://localhost:60001` in the browser. A `storeId` will be added to the URL if absent (see `template/src/util/store-id.ts`). Each unique `storeId` creates a distinct replica.
+4. Open `http://localhost:60001` in the browser. A `storeId` will be added to the URL if absent (see `studio/src/util/store-id.ts`). Each unique `storeId` creates a distinct replica.
 5. Open a second tab with a different `storeId` to observe cross‑replica sync.
 
 Auth token
-- Dev uses `authToken: 'insecure-token-change-me'` set in `template/src/Root.tsx`. Replace for production and move to environment secret management.
+- Dev uses `authToken: 'insecure-token-change-me'` set in `studio/src/Root.tsx`. Replace for production and move to environment secret management.
 
 Schema & events
-- Review/modify `template/src/livestore/schema.ts` for tables, events, materializers.
-- Add queries in `template/src/livestore/queries.ts` for UI consumption.
+- Review/modify `studio/src/livestore/schema.ts` for tables, events, materializers.
+- Add queries in `studio/src/livestore/queries.ts` for UI consumption.
 
 Local persistence
-- Data persisted to browser OPFS via `makePersistedAdapter` (see `template/src/Root.tsx`). Clearing site storage resets local DB.
+- Data persisted to browser OPFS via `makePersistedAdapter` (see `studio/src/Root.tsx`). Clearing site storage resets local DB.
 
 Workers
-- LiveStore worker: `template/src/livestore.worker.ts` configures schema and sync.
+- LiveStore worker: `studio/src/livestore.worker.ts` configures schema and sync.
 - Shared worker imported via `@livestore/adapter-web` handles multi‑tab coordination.
 
 Testing (future expansion)
@@ -37,7 +37,7 @@ Testing (future expansion)
 - Manual sync test: open two tabs with different `storeId` values and perform concurrent edits.
 
 Common tasks
-- Change ports: edit `template/vite.config.ts` (Vite) or Wrangler `--port` spawn args.
+- Change ports: edit `studio/vite.config.ts` (Vite) or Wrangler `--port` spawn args.
 - Update schema: modify events/materializers, keep versioned names (`v1.*`).
 - Rotate auth token: update server `validatePayload` and client `syncPayload` together.
 

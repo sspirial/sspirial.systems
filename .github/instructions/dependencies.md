@@ -1,10 +1,10 @@
-# Dependencies and versions (template‑aligned)
+# Dependencies and versions (studio‑aligned)
 
 Purpose
 - Keep dependencies minimal, pinned, and compatible with LiveStore’s local‑first runtime and Cloudflare sync backend.
 
 Engines
-- Node: ">=23.0.0" (as per `template/package.json`). Use nvm to match this version for dev tasks.
+- Node: ">=23.0.0" (as per `studio/package.json`). Use nvm to match this version for dev tasks.
 
 Runtime dependencies
 - @livestore/adapter-web: 0.3.1

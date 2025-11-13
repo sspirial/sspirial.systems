@@ -1,0 +1,92 @@
+{
+  "name": "sspirial.systems",
+  "tagline": "a microstudio for tiny, strange, African-centric digital inventions",
+  "description": "A playful laboratory creating experimental digital tools and prototypes. Curious, inventive, African-centric.",
+  "logo": "assets/sspirial_logo.png",
+  "year": 2025,
+  "location": "Africa 🌍",
+  "repository": "https://github.com/sspirial/sspirial.systems",
+  "social": {
+    "twitter": "https://twitter.com/sspirial",
+    "github": "https://github.com/sspirial/sspirial.systems"
+  },
+  "contact": {
+    "email": "hello@sspirial.systems",
+    "discussions": "https://github.com/sspirial/sspirial.systems/discussions"
+  
+  },
+  "philosophy": [
+    {
+      "id": "small-is-powerful",
+      "title": "Small is powerful",
+      "paragraphs": [
+        "Big software tries to do everything. Small software does one thing so well you can't imagine life without it. We build the latter.",
+        "Small tools are easier to understand, easier to trust, and easier to fix when they break. They respect your time and your device's resources."
+      ]
+    },
+    {
+      "id": "scarcity-not-problem",
+      "title": "Scarcity is not a problem to solve",
+      "paragraphs": [
+        "Most software assumes abundance: fast internet, powerful devices, unlimited data. We assume scarcity: intermittent connectivity, shared devices, limited battery.",
+        "Designing for scarcity isn't settling for less. It's finding elegance in constraint. It's making software that works for billions, not just millions."
+      ]
+    },
+    {
+      "id": "african-centric",
+      "title": "African-centric by default",
+      "paragraphs": [
+        "Most tech is built for Silicon Valley and adapted (poorly) for everyone else. We flip that. We design for African contexts first: multilingual users, cash-based economies, communal device usage.",
+        "This isn't tokenism. It's strategy. If your tool works in Lagos, Nairobi, or Kigali, it'll work anywhere."
+      ]
+    },
+    {
+      "id": "offline-first",
+      "title": "Offline first, always",
+      "paragraphs": [
+        "Connectivity is a luxury. Your software shouldn't stop working when the network does. Build for offline by default. Sync when possible, but never depend on it.",
+        "Offline-first isn't a technical choice—it's a political one. It says: your data, your device, your control."
+      ]
+    },
+    {
+      "id": "experiment-loudly",
+      "title": "Experiment loudly",
+      "paragraphs": [
+        "Most companies hide their failures. We share ours. Prototypes that didn't work. Ideas that flopped. Lessons learned the hard way.",
+        "Innovation isn't about getting it right the first time. It's about trying, failing, learning, and sharing what you learned."
+      ]
+    },
+    {
+      "id": "craft-over-scale",
+      "title": "Craft over scale",
+      "paragraphs": [
+        "We're not building unicorns. We're not chasing growth at all costs. We're making things we're proud of, at a pace that's sustainable.",
+        "We'd rather serve 1,000 people exceptionally well than 1,000,000 people poorly."
+      ]
+    },
+    {
+      "id": "open-by-default",
+      "title": "Open by default",
+      "paragraphs": [
+        "Our code, our process, our lessons—most of it is open. Not because we're saints, but because good ideas compound when shared.",
+        "Open source isn't charity. It's collaboration. It's betting that collective intelligence beats proprietary secrets."
+      ]
+    },
+    {
+      "id": "user-agency",
+      "title": "User agency over engagement",
+      "paragraphs": [
+        "We don't optimize for \"time spent in app.\" We optimize for user control. Our tools should serve you, not trap you.",
+        "Good software gets out of your way. It empowers you to do what you came to do, then lets you leave."
+      ]
+    },
+    {
+      "id": "beauty-simplicity",
+      "title": "Beauty in simplicity",
+      "paragraphs": [
+        "Minimalism isn't about removing features until there's nothing left. It's about removing everything that distracts from the essential.",
+        "Elegant code. Clear interfaces. Thoughtful interactions. Software can be functional and beautiful. We insist on both."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Collaborate — sspirial.systems</title>
+  <meta name="description" content="Let's build something together. An invitation to developers, designers, researchers, and curious minds.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Decorative gear elements -->
+  <div class="gear-accent gear-1"><img src="assets/sspirial_logo.png" alt="" /></div>
+  <div class="gear-accent gear-2"><img src="assets/sspirial_logo.png" alt="" /></div>
+  <div class="gear-accent gear-3"><img src="assets/sspirial_logo.png" alt="" /></div>
+
+  <!-- Navigation -->
+  <nav>
+    <div class="logo">
+  <span class="logo-icon"><img src="assets/sspirial_logo.png" alt="sspirial fox mascot" style="height: 2em; vertical-align: middle;" /></span>
+      <span>sspirial.systems</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">home</a></li>
+      <li><a href="projects.html">projects</a></li>
+      <li><a href="lab-notebook.html">lab notebook</a></li>
+      <li><a href="philosophy.html">philosophy</a></li>
+      <li><a href="collaborate.html">collaborate</a></li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container">
+    <section class="fade-in collaborate-content">
+      <h1>Let's build something together</h1>
+      <p class="hero-subtitle">
+        We're not a company looking for clients. We're a studio looking for co-conspirators.
+      </p>
+
+      <p style="color: rgba(250, 250, 250, 0.7); margin-top: 2rem;">
+        If you're a developer, designer, researcher, writer, or just someone with 
+        a strange idea that won't leave you alone—reach out. 
+        We love collaborating on small experiments that might become something bigger.
+      </p>
+
+      <h2 style="margin-top: 4rem; margin-bottom: 2rem;">Who we'd love to hear from</h2>
+      
+      <!-- Collaborator types - dynamically loaded -->
+      <div id="collaborators-container" class="philosophy-grid" style="text-align: left;" data-content="collaborators">
+        <!-- Collaborator types will be loaded here via JavaScript -->
+      </div>
+
+      <h2 style="margin-top: 5rem; margin-bottom: 2rem;">How to reach us</h2>
+
+      <div class="contact-options">
+        <div class="contact-option">
+          <span class="contact-option-icon">📧</span>
+          <p>Email us</p>
+          <a href="mailto:hello@sspirial.systems">hello@sspirial.systems</a>
+        </div>
+
+        <div class="contact-option">
+          <span class="contact-option-icon">💬</span>
+          <p>GitHub Discussions</p>
+          <a href="https://github.com/sspirial/sspirial.systems/discussions" target="_blank">Start a conversation</a>
+        </div>
+
+        <div class="contact-option">
+          <span class="contact-option-icon">🐦</span>
+          <p>Social</p>
+          <a href="https://twitter.com/sspirial" target="_blank">@sspirial</a>
+        </div>
+      </div>
+
+      <div style="margin-top: 5rem; padding: 2rem; background: rgba(107, 76, 154, 0.1); border-left: 3px solid var(--purple); border-radius: 6px; text-align: left;">
+        <h3 style="color: var(--gold); margin-bottom: 1rem;">What to expect</h3>
+        <p style="color: rgba(250, 250, 250, 0.7); margin-bottom: 0.75rem;">
+          <strong>We respond slowly.</strong> We're a tiny team. 
+          We read every message, but it might take a few days.
+        </p>
+        <p style="color: rgba(250, 250, 250, 0.7); margin-bottom: 0.75rem;">
+          <strong>We're honest about capacity.</strong> If we can't collaborate right now, 
+          we'll say so. We'd rather be upfront than ghost you.
+        </p>
+        <p style="color: rgba(250, 250, 250, 0.7); margin-bottom: 0;">
+          <strong>We value thoughtfulness.</strong> Tell us what you're working on, 
+          why it matters to you, and what kind of collaboration you're imagining. 
+          The more specific, the better.
+        </p>
+      </div>
+
+      <h2 style="margin-top: 5rem; margin-bottom: 1.5rem;">Not ready to reach out?</h2>
+      <p style="color: rgba(250, 250, 250, 0.7);">
+        No worries. Follow along on <a href="https://github.com/sspirial/sspirial.systems" target="_blank">GitHub</a>, 
+        read through our <a href="lab-notebook.html">lab notebook</a>, 
+        or just keep building your own thing. 
+        We'll be here when you're ready.
+      </p>
+
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2025 sspirial.systems — a microstudio experiment</p>
+    <p>crafted with curiosity in Africa 🌍</p>
+  </footer>
+
+  <script src="js/data-loader.js"></script>
+  <script src="js/renderers.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

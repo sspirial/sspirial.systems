@@ -17,12 +17,12 @@ Reproduction steps (this repo)
 	- Wrangler console output (from CF worker `onPush`/`onPull`)
 
 Likely files to inspect
-- Client UI/Provider: `template/src/Root.tsx`
-- LiveStore worker: `template/src/livestore.worker.ts`
-- Schema/events/materializers: `template/src/livestore/schema.ts`
-- Queries: `template/src/livestore/queries.ts`
-- Sync server: `template/src/cf-worker/index.ts`
-- Tooling: `template/vite.config.ts`, `template/wrangler.toml`
+- Client UI/Provider: `studio/src/Root.tsx`
+- LiveStore worker: `studio/src/livestore.worker.ts`
+- Schema/events/materializers: `studio/src/livestore/schema.ts`
+- Queries: `studio/src/livestore/queries.ts`
+- Sync server: `studio/src/cf-worker/index.ts`
+- Tooling: `studio/vite.config.ts`, `studio/wrangler.toml`
 
 Triage tasks (what to produce)
 1. A failing test (unit or replication e2e) or a minimal reproduction script; if no harness exists, include precise manual steps and expected/actual state.
