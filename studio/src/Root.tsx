@@ -10,44 +10,56 @@ import { ProjectsSection } from './components/ProjectsSection.js'
 import { NotebookSection } from './components/NotebookSection.js'
 import { CollaboratorsSection } from './components/CollaboratorsSection.js'
 import { ExportSection } from './components/ExportSection.js'
+import { PortalRouter } from './components/portal/PortalRouter.js'
+import { usePortalRoute } from './components/portal/usePortalRoute.js'
+import '../src/components/portal/portal-style.css'
 import LiveStoreWorker from './livestore.worker?worker'
 import { schema } from './livestore/schema.js'
 import { uiState$ } from './livestore/queries.js'
 import { getStoreId } from './util/store-id.js'
 
+
 const StudioContent: React.FC = () => {
-  const { store } = useStore()
-  const uiState = store.useQuery(uiState$)
+  const { store } = useStore();
+  const uiState = store.useQuery(uiState$);
+  const [portalRoute] = usePortalRoute();
+
+  // If hash starts with 'portal', show portal pages
+  if (window.location.hash.replace(/^#\/?/, '').startsWith('portal')) {
+    return (
+      <div className="portal-wrapper">
+        <PortalRouter route={portalRoute} />
+      </div>
+    );
+  }
 
   const renderSection = () => {
     switch (uiState.activeSection) {
       case 'projects':
-        return <ProjectsSection />
+        return <ProjectsSection />;
       case 'notebook':
-        return <NotebookSection />
-      // case 'philosophy':
-      //   return <PhilosophySection />
+        return <NotebookSection />;
       case 'collaborators':
-        return <CollaboratorsSection />
-      // case 'metadata':
-      //   return <MetadataSection />
+        return <CollaboratorsSection />;
       case 'export':
-        return <ExportSection />
+        return <ExportSection />;
       default:
-        return <div className="content-section"><h2>Welcome</h2><p>Select a section from the sidebar</p></div>
+        return (
+          <div className="content-section">
+            <h2>Welcome</h2>
+            <p>Select a section from the sidebar</p>
+          </div>
+        );
     }
-  }
+  };
 
   return (
     <div className="studio-layout">
       <Sidebar />
-      <main className="studio-main">
-  {/* DataSeeder removed */}
-        {renderSection()}
-      </main>
+      <main className="studio-main">{renderSection()}</main>
     </div>
-  )
-}
+  );
+};
 
 const AppBody: React.FC = () => (
   <div className="studio-app">
