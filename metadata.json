@@ -1,0 +1,9 @@
+
+{
+  "name": "sspirial.systems R&D Studio",
+  "description": "A high-fidelity prototype for sspirial.systems, an independent R&D micro-studio specializing in digital infrastructure, experimental software, and autonomous agents.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
