@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Projects from './pages/Projects';
 import Research from './pages/Research';
 import About from './pages/About';
+import Admin from './pages/Admin';
 import LabAssistant from './components/LabAssistant';
 
 const Header: React.FC<{ darkMode: boolean; setDarkMode: (v: boolean) => void }> = ({ darkMode, setDarkMode }) => {
@@ -23,14 +24,21 @@ const Header: React.FC<{ darkMode: boolean; setDarkMode: (v: boolean) => void }>
     }
   };
 
+  // Initialize dark mode class on mount
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[#e5e7eb] dark:border-[#2a3441] bg-white/80 dark:bg-[#101622]/80 backdrop-blur-md px-6 py-4 lg:px-12 transition-colors">
+    <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[#e5e7eb] dark:border-white/10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-6 py-4 lg:px-12 transition-colors">
       <div className="flex items-center gap-4 cursor-pointer" onClick={() => navigate('/')}>
         <LogoIcon />
         <h2 className="text-[#111318] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">sspirial.systems</h2>
-        <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full border border-green-200 dark:border-green-800">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-          <span className="text-xs font-mono font-medium text-green-700 dark:text-green-400 uppercase tracking-wider">Systems Operational</span>
+        <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20">
+          <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+          <span className="text-xs font-mono font-medium text-primary uppercase tracking-wider">Systems Operational</span>
         </div>
       </div>
       <div className="flex items-center gap-6">
@@ -56,7 +64,7 @@ const Header: React.FC<{ darkMode: boolean; setDarkMode: (v: boolean) => void }>
 };
 
 const Footer: React.FC = () => (
-  <footer className="mt-auto border-t border-[#e5e7eb] dark:border-[#2a3441] pt-16 pb-8 px-6 lg:px-12 bg-white dark:bg-background-dark">
+  <footer className="mt-auto border-t border-[#e5e7eb] dark:border-white/10 pt-16 pb-8 px-6 lg:px-12 bg-white dark:bg-background-dark">
     <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 max-w-[1200px] mx-auto w-full">
       <div className="col-span-1 flex flex-col gap-4">
         <div className="flex items-center gap-2">
@@ -64,7 +72,7 @@ const Footer: React.FC = () => (
           <span className="font-bold text-lg">sspirial.systems</span>
         </div>
         <p className="text-[#616f89] dark:text-gray-400 text-sm">
-          Independent R&amp;D micro-studio.<br/>Building tomorrow's digital infrastructure.
+          Independent R&amp;D micro-studio.<br />Building tomorrow's digital infrastructure.
         </p>
       </div>
       <div>
@@ -88,7 +96,7 @@ const Footer: React.FC = () => (
         <h4 className="font-bold">Newsletter</h4>
         <p className="text-sm text-[#616f89] dark:text-gray-400">Updates on new experiments and releases.</p>
         <div className="flex gap-2">
-          <input className="bg-white dark:bg-[#151c2a] border border-[#e5e7eb] dark:border-[#2a3441] text-sm rounded px-3 py-2 w-full focus:outline-none focus:border-primary text-slate-900 dark:text-white" placeholder="email@address.com" type="email"/>
+          <input className="bg-white dark:bg-[#151c2a] border border-[#e5e7eb] dark:border-[#2a3441] text-sm rounded px-3 py-2 w-full focus:outline-none focus:border-primary text-slate-900 dark:text-white" placeholder="email@address.com" type="email" />
           <button className="bg-primary text-white p-2 rounded hover:bg-primary/90">
             <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
           </button>
@@ -107,7 +115,7 @@ const Footer: React.FC = () => (
 );
 
 const App: React.FC = () => {
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
 
   return (
     <HashRouter>
@@ -118,6 +126,7 @@ const App: React.FC = () => {
           <Route path="/projects" element={<Projects />} />
           <Route path="/research" element={<Research />} />
           <Route path="/about" element={<About />} />
+          <Route path="/admin" element={<Admin />} />
         </Routes>
         <Footer />
         <LabAssistant />

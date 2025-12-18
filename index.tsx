@@ -1,3 +1,8 @@
+import '@fontsource/plus-jakarta-sans';
+import '@fontsource/jetbrains-mono';
+import '@fontsource/noto-sans';
+import 'material-symbols/outlined.css';
+import './index.css';
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
