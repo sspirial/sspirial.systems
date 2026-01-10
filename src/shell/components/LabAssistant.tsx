@@ -1,12 +1,11 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { askLabAssistant } from '../services/gemini';
+import { askLabAssistant } from '@shell/services/gemini';
 
 const LabAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>([
-    { role: 'assistant', text: "Systems online. How can I assist with your inquiry today?" }
+    { role: 'assistant', text: 'Systems online. How can I assist with your inquiry today?' }
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);

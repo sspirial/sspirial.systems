@@ -1,5 +1,4 @@
-
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI } from '@google/genai';
 
 const SYSTEM_INSTRUCTION = `
 You are the sspirial.systems Lab Assistant.
@@ -31,7 +30,7 @@ export async function askLabAssistant(query: string) {
     });
     return response.text || "I'm sorry, I couldn't process that signal. Please try again.";
   } catch (error) {
-    console.error("Lab Assistant Error:", error);
-    return "Error connecting to the lab core. Please check your network bridge.";
+    console.error('Lab Assistant Error:', error);
+    return 'Error connecting to the lab core. Please check your network bridge.';
   }
 }

@@ -1,14 +1,14 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { INITIAL_PROJECTS } from '../constants';
+import { useProjects } from '@shell/hooks/useContent';
 
 const Home: React.FC = () => {
+  const { data: projects } = useProjects();
+  
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden">
       <main className="flex-1 flex flex-col items-center px-6 lg:px-12 pb-20">
         <div className="max-w-[1200px] w-full flex flex-col">
-          {/* Hero Section */}
           <section className="py-16 lg:py-24 border-b border-[#e5e7eb] dark:border-white/10">
             <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-16">
               <div className="flex-1 flex flex-col gap-8">
@@ -57,34 +57,19 @@ const Home: React.FC = () => {
             </div>
           </section>
 
-          {/* Marquee */}
           <div className="w-full overflow-hidden border-b border-[#e5e7eb] dark:border-white/10 bg-gray-50 dark:bg-surface-dark py-3">
             <div className="flex whitespace-nowrap gap-12 text-sm font-mono text-[#616f89] dark:text-gray-400 uppercase tracking-widest animate-marquee">
-              <span>/// Prototyping</span>
-              <span>/// Research</span>
-              <span>/// Systems Design</span>
-              <span>/// Generative AI</span>
-              <span>/// User Interface</span>
-              <span>/// Full Stack Architecture</span>
-              <span>/// Autonomous Agents</span>
-              <span>/// WebGPU</span>
-              <span>/// Rust</span>
-              <span>/// WASM</span>
-              {/* Duplicate for seamless marquee */}
-              <span>/// Prototyping</span>
-              <span>/// Research</span>
-              <span>/// Systems Design</span>
-              <span>/// Generative AI</span>
-              <span>/// User Interface</span>
-              <span>/// Full Stack Architecture</span>
-              <span>/// Autonomous Agents</span>
-              <span>/// WebGPU</span>
-              <span>/// Rust</span>
-              <span>/// WASM</span>
+              <span>/// Systems Thinking</span>
+              <span>/// Self-Mastery</span>
+              <span>/// Perception</span>
+              <span>/// Inquiry</span>
+              <span>/// Resilience</span>
+              <span>/// Innovation</span>
+              <span>/// Architecture</span>
+              <span>/// Legacy</span>
             </div>
           </div>
 
-          {/* Featured Projects Section */}
           <section className="py-16 lg:py-24">
             <div className="flex justify-between items-end mb-12 px-2">
               <div>
@@ -97,7 +82,7 @@ const Home: React.FC = () => {
               </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {INITIAL_PROJECTS.slice(0, 3).map((project) => (
+              {projects.slice(0, 3).map((project) => (
                 <div key={project.id} className="group flex flex-col gap-4 p-2 rounded-xl transition-all hover:bg-white hover:shadow-xl dark:hover:bg-[#151c2a] border border-transparent hover:border-[#e5e7eb] dark:hover:border-[#2a3441]">
                   <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-gray-200">
                     <div className="absolute top-3 left-3 z-10 bg-black/70 backdrop-blur text-white text-[10px] font-mono px-2 py-1 rounded">{project.id}</div>
@@ -120,7 +105,6 @@ const Home: React.FC = () => {
             </div>
           </section>
 
-          {/* Mission Section */}
           <section className="py-16 lg:py-24 border-t border-[#e5e7eb] dark:border-white/10">
             <div className="flex flex-col gap-12">
               <h2 className="text-[#111318] dark:text-primary text-3xl lg:text-5xl font-bold leading-tight tracking-tight">

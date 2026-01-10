@@ -1,38 +1,26 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { INITIAL_RESEARCH_POSTS } from '../constants';
-import { useResearch } from '../src/hooks/useContent';
+import { useResearch } from '@shell/hooks/useContent';
 
 const Research: React.FC = () => {
-  const { data: posts, loading } = useResearch(INITIAL_RESEARCH_POSTS);
+  const { data: posts, loading } = useResearch();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [activeTab, setActiveTab] = React.useState('All Posts');
 
   const featured = posts.find(p => p.featured);
 
-  // Filter logic
   const others = posts.filter(p => {
     if (p.featured) return false;
 
-    // Tab filter
     if (activeTab !== 'All Posts') {
-      // Map tab names to categories if needed, or use direct match
-      // Assuming categories in data match tab names roughly or we normalize
-      // Tabs: 'Research', 'Dev Logs', 'Whitepapers'
-      // Data categories: 'WHITEPAPER', 'DEV LOG', 'INSIGHT', 'TUTORIAL'
-      // Let's do a simple includes check or normalization
-      const normalizedTab = activeTab.toUpperCase().replace(/S$/, ''); // Remove trailing S for simple plural check
+      const normalizedTab = activeTab.toUpperCase().replace(/S$/, '');
       if (!p.category.includes(normalizedTab) && !p.category.includes(activeTab.toUpperCase())) {
-        // Special case for 'Research' tab might mean everything or specific 'RESEARCH' category?
-        // Let's assume strict matching for now based on data
-        if (activeTab === 'Research' && p.category !== 'RESEARCH') return false; // Might be too strict if no RESEARCH category
+        if (activeTab === 'Research' && p.category !== 'RESEARCH') return false;
         if (activeTab === 'Dev Logs' && p.category !== 'DEV LOG') return false;
         if (activeTab === 'Whitepapers' && p.category !== 'WHITEPAPER') return false;
       }
     }
 
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (

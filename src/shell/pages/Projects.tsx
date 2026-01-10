@@ -1,11 +1,9 @@
-
 import React, { useState } from 'react';
-import { INITIAL_PROJECTS } from '../constants';
-import { useProjects } from '../src/hooks/useContent';
 import { Link } from 'react-router-dom';
+import { useProjects } from '@shell/hooks/useContent';
 
 const Projects: React.FC = () => {
-  const { data: projects, loading } = useProjects(INITIAL_PROJECTS);
+  const { data: projects, loading } = useProjects();
   const [filter, setFilter] = useState('All');
   const filters = ['All', 'Prototypes', 'Tools', 'Experiments', 'Architecture'];
 
@@ -68,7 +66,7 @@ const Projects: React.FC = () => {
                 {project.version && (
                   <div className="absolute right-3 top-3 rounded-full bg-white/90 px-2 py-1 text-xs font-bold uppercase tracking-wider text-slate-800 backdrop-blur-sm">{project.version}</div>
                 )}
-                {project.status === "Archived" && <div className="absolute inset-0 bg-slate-900/10 dark:bg-black/40"></div>}
+                {project.status === 'Archived' && <div className="absolute inset-0 bg-slate-900/10 dark:bg-black/40"></div>}
               </div>
               <div className="flex flex-1 flex-col p-5">
                 <div className="mb-3 flex items-center gap-2">

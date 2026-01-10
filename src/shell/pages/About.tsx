@@ -1,13 +1,21 @@
-
 import React from 'react';
-import { INITIAL_TIMELINE as TIMELINE } from '../constants';
+import { useTimeline } from '@shell/hooks/useContent';
 
 const About: React.FC = () => {
+  const { data: TIMELINE, loading } = useTimeline();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="layout-container flex h-full grow flex-col">
       <div className="px-5 md:px-40 flex flex-1 justify-center py-5">
         <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
-          {/* Hero Section */}
           <section className="flex flex-col gap-6 py-10 lg:flex-row items-center">
             <div className="w-full bg-center bg-no-repeat aspect-square md:aspect-video bg-cover rounded-xl shadow-sm overflow-hidden lg:w-1/2 relative group" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBOBDPUvWdNoYaF64ArO3xoaP7S4_3LFi4r-fzIB6Xq-4qYhh0CAvKVTRIOVAIIhqhG_BhUCJMMI5ZTNmXKMVOwztpaw4c9Tyi7wJ0P0lcoaECVxJ1ElYq3ZuhelpnXKPndedG8kH99u2R5dGhSuXS5_c8tl28KoKPNDe6-BrMk6bO2hoqIMSMKXbP2nHB2OLtKuOiTLC7e9mkdzMrf6GGfeBWbYjgoDFFAY5ADSSrViuCNCpbyj-g_Ofdb6TynuGk4EGUBuKiEBUOU")' }}>
               <div className="absolute inset-0 bg-primary/10 group-hover:bg-primary/5 transition-colors"></div>
@@ -19,7 +27,7 @@ const About: React.FC = () => {
                   <span className="text-xs font-bold text-primary uppercase tracking-wide">System Status: Online</span>
                 </div>
                 <h1 className="text-[#111318] dark:text-white text-4xl font-black leading-tight tracking-[-0.033em] md:text-5xl">
-                  We are sspirial.systems.<br />An Independent R&amp;D Organism.
+                  We are sspirial.systems.<br />An Independent R&D Organism.
                 </h1>
                 <h2 className="text-[#616f89] dark:text-gray-300 text-base font-normal leading-relaxed">
                   Exploring the intersection of design, code, and systems thinking through radical curiosity. We operate outside traditional models to foster pure innovation.
@@ -32,7 +40,6 @@ const About: React.FC = () => {
             </div>
           </section>
 
-          {/* Philosophy Section */}
           <section className="flex flex-col gap-10 py-16 border-t border-[#f0f2f4] dark:border-white/10">
             <div className="flex flex-col gap-4">
               <h2 className="text-[#111318] dark:text-white tracking-light text-[32px] font-bold leading-tight max-w-[720px]">Core Philosophy</h2>
@@ -59,7 +66,6 @@ const About: React.FC = () => {
             </div>
           </section>
 
-          {/* Evolution / Timeline */}
           <section className="py-16 border-t border-[#f0f2f4] dark:border-white/10">
             <h2 className="text-[#111318] dark:text-white text-2xl font-bold mb-10">Evolution Log</h2>
             <div className="grid grid-cols-[40px_1fr] gap-x-6 px-4">

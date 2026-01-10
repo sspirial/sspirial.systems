@@ -1,13 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogoIcon } from './constants';
-import Home from './pages/Home';
-import Projects from './pages/Projects';
-import Research from './pages/Research';
-import About from './pages/About';
-import Admin from './pages/Admin';
-import LabAssistant from './components/LabAssistant';
+import LogoIcon from '@shell/components/LogoIcon';
+import Home from '@shell/pages/Home';
+import Projects from '@shell/pages/Projects';
+import Research from '@shell/pages/Research';
+import About from '@shell/pages/About';
+import Admin from '@shell/pages/Admin';
+import Login from '@shell/pages/Login';
+import LabAssistant from '@shell/components/LabAssistant';
+import { AuthProvider } from '@shell/contexts/AuthContext';
+import ProtectedRoute from '@shell/components/ProtectedRoute';
 
 const Header: React.FC<{ darkMode: boolean; setDarkMode: (v: boolean) => void }> = ({ darkMode, setDarkMode }) => {
   const navigate = useNavigate();
@@ -24,12 +26,11 @@ const Header: React.FC<{ darkMode: boolean; setDarkMode: (v: boolean) => void }>
     }
   };
 
-  // Initialize dark mode class on mount
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
     }
-  }, []);
+  }, [darkMode]);
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[#e5e7eb] dark:border-white/10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-6 py-4 lg:px-12 transition-colors">
@@ -72,7 +73,7 @@ const Footer: React.FC = () => (
           <span className="font-bold text-lg">sspirial.systems</span>
         </div>
         <p className="text-[#616f89] dark:text-gray-400 text-sm">
-          Independent R&amp;D micro-studio.<br />Building tomorrow's digital infrastructure.
+          Independent R&D micro-studio.<br />Building tomorrow's digital infrastructure.
         </p>
       </div>
       <div>
@@ -119,18 +120,25 @@ const App: React.FC = () => {
 
   return (
     <HashRouter>
-      <div className={`flex flex-col min-h-screen ${darkMode ? 'dark' : ''}`}>
-        <Header darkMode={darkMode} setDarkMode={setDarkMode} />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/research" element={<Research />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/admin" element={<Admin />} />
-        </Routes>
-        <Footer />
-        <LabAssistant />
-      </div>
+      <AuthProvider>
+        <div className={`flex flex-col min-h-screen ${darkMode ? 'dark' : ''}`}>
+          <Header darkMode={darkMode} setDarkMode={setDarkMode} />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/research" element={<Research />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <Admin />
+              </ProtectedRoute>
+            } />
+          </Routes>
+          <Footer />
+          <LabAssistant />
+        </div>
+      </AuthProvider>
     </HashRouter>
   );
 };
