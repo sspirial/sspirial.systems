@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useProjects } from '@shell/hooks/useContent';
+import { useSiteConfig } from '@shell/hooks/useSiteConfig';
 
 const Home: React.FC = () => {
   const { data: projects } = useProjects();
+  const { config } = useSiteConfig();
   
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden">
@@ -13,16 +15,23 @@ const Home: React.FC = () => {
             <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-16">
               <div className="flex-1 flex flex-col gap-8">
                 <div className="flex flex-col gap-4 text-left">
-                  <span className="font-mono text-xs text-primary bg-primary/10 px-2 py-1 rounded w-fit uppercase tracking-widest">v2.1.0 // R&D Studio</span>
+                  <span className="font-mono text-xs text-primary bg-primary/10 px-2 py-1 rounded w-fit uppercase tracking-widest">{config.version} // {config.statusLabel}</span>
                   <h1 className="text-[#111318] dark:text-white text-5xl lg:text-7xl font-extrabold leading-[1.1] tracking-[-0.033em]">
-                    Engineering the <span className="text-primary">Future</span> of Digital Systems.
+                    {config.hero.tagline.split(config.hero.highlight).map((part, i) => (
+                      <React.Fragment key={i}>
+                        {part}
+                        {i < config.hero.tagline.split(config.hero.highlight).length - 1 && (
+                          <span className="text-primary">{config.hero.highlight}</span>
+                        )}
+                      </React.Fragment>
+                    ))}
                   </h1>
                   <p className="text-[#616f89] dark:text-gray-400 text-lg leading-relaxed max-w-[600px] mt-2">
-                    sspirial.systems is an independent micro-studio dedicated to experimental software, complex architecture, and building tools for the next web.
+                    {config.hero.description}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-4">
-                  <Link to="/projects" className="flex items-center justify-center gap-2 rounded-lg h-12 px-6 bg-[#111318] dark:bg-white text-white dark:text-[#111318] text-base font-bold hover:opacity-90 transition-all">
+                  <Link to="/research" className="flex items-center justify-center gap-2 rounded-lg h-12 px-6 bg-[#111318] dark:bg-white text-white dark:text-[#111318] text-base font-bold hover:opacity-90 transition-all">
                     <span>Explore Lab</span>
                     <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
                   </Link>
@@ -33,18 +42,18 @@ const Home: React.FC = () => {
                 <div className="flex gap-8 pt-4 border-t border-dashed border-[#e5e7eb] dark:border-white/10 mt-2">
                   <div>
                     <p className="font-mono text-xs text-[#616f89] dark:text-gray-500 uppercase mb-1">Current Focus</p>
-                    <p className="font-bold text-sm">Autonomous Agents</p>
+                    <p className="font-bold text-sm">{config.currentFocus.label}</p>
                   </div>
                   <div>
                     <p className="font-mono text-xs text-[#616f89] dark:text-gray-500 uppercase mb-1">Availability</p>
-                    <p className="font-bold text-sm text-green-600">Open for Q4 Projects</p>
+                    <p className="font-bold text-sm text-green-600">{config.currentFocus.availability}</p>
                   </div>
                 </div>
               </div>
               <div className="w-full lg:w-[45%]">
                 <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden shadow-2xl bg-[#111318]">
                   <div className="absolute inset-0 bg-primary/20 mix-blend-overlay z-10"></div>
-                  <div className="w-full h-full bg-cover bg-center grayscale hover:grayscale-0 transition-all duration-700" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBWjMVHcjg3jt4TcSYvj1nrMYPF4q7DAsLAZHGivufohQAklbA830x3wWEfVkcWpfblAP6hBItoLdvRh9bXZ1twCceSkw78dN0A3Q4On5Hu99JLvQoSgeWMLCpR8baX8nOcQxZ2ps70NszbkC57NxGIPpRvoI-MW_UgTGGRUVOIzrVxduOyA8TnrxS-T-kaEBbvLFC07S_ykJ7Nlb-UUCgGDvQOqvHMxzn9L3arECd-dyGRRtbC-dgHIjkeHl8lO9bMPDEebUVZ0ZHT")' }}>
+                  <div className="w-full h-full bg-cover bg-center grayscale hover:grayscale-0 transition-all duration-700" style={{ backgroundImage: `url("${config.hero.imageUrl}")` }}>
                   </div>
                   <div className="absolute bottom-4 left-4 right-4 z-20 flex justify-between items-end">
                     <div className="bg-white/90 dark:bg-black/80 backdrop-blur px-3 py-2 rounded border border-white/20">
@@ -58,15 +67,11 @@ const Home: React.FC = () => {
           </section>
 
           <div className="w-full overflow-hidden border-b border-[#e5e7eb] dark:border-white/10 bg-gray-50 dark:bg-surface-dark py-3">
-            <div className="flex whitespace-nowrap gap-12 text-sm font-mono text-[#616f89] dark:text-gray-400 uppercase tracking-widest animate-marquee">
-              <span>/// Systems Thinking</span>
-              <span>/// Self-Mastery</span>
-              <span>/// Perception</span>
-              <span>/// Inquiry</span>
-              <span>/// Resilience</span>
-              <span>/// Innovation</span>
-              <span>/// Architecture</span>
-              <span>/// Legacy</span>
+            <div className="flex gap-12 text-sm font-mono text-[#616f89] dark:text-gray-400 uppercase tracking-widest animate-marquee will-change-transform">
+              {/* Duplicate items for seamless infinite loop */}
+              {[...config.systemsMarquee, ...config.systemsMarquee].map((item, idx) => (
+                <span key={idx} className="whitespace-nowrap">{item}</span>
+              ))}
             </div>
           </div>
 
@@ -111,24 +116,14 @@ const Home: React.FC = () => {
                 Current focus
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
-                <div className="flex flex-col gap-4 pl-6 border-l-2 border-accent">
-                  <h3 className="text-[#111318] dark:text-primary text-xl font-bold">Local-first software</h3>
-                  <p className="text-[#616f89] dark:text-gray-400 text-base leading-relaxed">
-                    Building tools that work offline by default, sync when possible, and respect that connectivity is a luxury, not a given.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-4 pl-6 border-l-2 border-accent">
-                  <h3 className="text-[#111318] dark:text-primary text-xl font-bold">Tiny tools</h3>
-                  <p className="text-[#616f89] dark:text-gray-400 text-base leading-relaxed">
-                    Software that does one thing exceptionally well. Small enough to understand. Focused enough to trust.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-4 pl-6 border-l-2 border-accent">
-                  <h3 className="text-[#111318] dark:text-primary text-xl font-bold">Open experiments</h3>
-                  <p className="text-[#616f89] dark:text-gray-400 text-base leading-relaxed">
-                    Sharing our process—the sketches, the failures, the half-finished ideas—because invention is messy and that is beautiful.
-                  </p>
-                </div>
+                {config.focusAreas.map((area, idx) => (
+                  <div key={idx} className="flex flex-col gap-4 pl-6 border-l-2 border-accent">
+                    <h3 className="text-[#111318] dark:text-primary text-xl font-bold">{area.title}</h3>
+                    <p className="text-[#616f89] dark:text-gray-400 text-base leading-relaxed">
+                      {area.description}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           </section>

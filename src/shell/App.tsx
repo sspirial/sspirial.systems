@@ -9,11 +9,14 @@ import Admin from '@shell/pages/Admin';
 import Login from '@shell/pages/Login';
 import LabAssistant from '@shell/components/LabAssistant';
 import { AuthProvider } from '@shell/contexts/AuthContext';
+import { ServicesProvider } from '@shell/contexts/ServicesContext';
 import ProtectedRoute from '@shell/components/ProtectedRoute';
+import { useSiteConfig } from '@shell/hooks/useSiteConfig';
 
 const Header: React.FC<{ darkMode: boolean; setDarkMode: (v: boolean) => void }> = ({ darkMode, setDarkMode }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isActive = (path: string) => location.pathname === path;
 
   const toggleDarkMode = () => {
@@ -31,6 +34,11 @@ const Header: React.FC<{ darkMode: boolean; setDarkMode: (v: boolean) => void }>
       document.documentElement.classList.add('dark');
     }
   }, [darkMode]);
+
+  const handleMobileNavClick = (path: string) => {
+    navigate(path);
+    setMobileMenuOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[#e5e7eb] dark:border-white/10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-6 py-4 lg:px-12 transition-colors">
@@ -53,92 +61,111 @@ const Header: React.FC<{ darkMode: boolean; setDarkMode: (v: boolean) => void }>
             {darkMode ? 'light_mode' : 'dark_mode'}
           </span>
         </button>
-        <button className="hidden sm:flex min-w-[84px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">
-          Initialize Contact
+        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          <span className="material-symbols-outlined text-[#111318] dark:text-white">
+            {mobileMenuOpen ? 'close' : 'menu'}
+          </span>
         </button>
-        <div className="md:hidden">
-          <span className="material-symbols-outlined text-[#111318] dark:text-white">menu</span>
-        </div>
       </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden absolute top-full left-0 right-0 bg-white dark:bg-background-dark border-b border-[#e5e7eb] dark:border-white/10 shadow-lg z-40">
+          <nav className="flex flex-col p-4 gap-4">
+            <button 
+              onClick={() => handleMobileNavClick('/projects')} 
+              className={`text-left px-4 py-3 rounded-lg transition-colors ${isActive('/projects') ? 'bg-primary/10 text-primary font-medium' : 'text-[#111318] dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+            >
+              Work
+            </button>
+            <button 
+              onClick={() => handleMobileNavClick('/about')} 
+              className={`text-left px-4 py-3 rounded-lg transition-colors ${isActive('/about') ? 'bg-primary/10 text-primary font-medium' : 'text-[#111318] dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+            >
+              About
+            </button>
+            <button 
+              onClick={() => handleMobileNavClick('/research')} 
+              className={`text-left px-4 py-3 rounded-lg transition-colors ${isActive('/research') ? 'bg-primary/10 text-primary font-medium' : 'text-[#111318] dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+            >
+              Lab / Knowledge
+            </button>
+          </nav>
+        </div>
+      )}
     </header>
   );
 };
 
-const Footer: React.FC = () => (
-  <footer className="mt-auto border-t border-[#e5e7eb] dark:border-white/10 pt-16 pb-8 px-6 lg:px-12 bg-white dark:bg-background-dark">
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 max-w-[1200px] mx-auto w-full">
-      <div className="col-span-1 flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <LogoIcon />
-          <span className="font-bold text-lg">sspirial.systems</span>
+const Footer: React.FC<{ siteConfig: any }> = ({ siteConfig }) => {
+  return (
+    <footer className="mt-auto border-t border-[#e5e7eb] dark:border-white/10 pt-16 pb-8 px-6 lg:px-12 bg-white dark:bg-background-dark">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16 max-w-[1200px] mx-auto w-full">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <LogoIcon />
+            <span className="font-bold text-lg">sspirial.systems</span>
+          </div>
+          <p className="text-[#616f89] dark:text-gray-400 text-sm">
+            {siteConfig.footer.bio}
+          </p>
         </div>
-        <p className="text-[#616f89] dark:text-gray-400 text-sm">
-          Independent R&D micro-studio.<br />Building tomorrow's digital infrastructure.
-        </p>
-      </div>
-      <div>
-        <h4 className="font-bold mb-4">Sitemap</h4>
-        <ul className="flex flex-col gap-2 text-sm text-[#616f89] dark:text-gray-400">
-          <li><Link to="/projects" className="hover:text-primary transition-colors">Work Index</Link></li>
-          <li><Link to="/about" className="hover:text-primary transition-colors">Studio Philosophy</Link></li>
-          <li><Link to="/research" className="hover:text-primary transition-colors">Experimental Lab</Link></li>
-          <li><Link to="/research" className="hover:text-primary transition-colors">Journal</Link></li>
-        </ul>
-      </div>
-      <div>
-        <h4 className="font-bold mb-4">Social</h4>
-        <ul className="flex flex-col gap-2 text-sm text-[#616f89] dark:text-gray-400">
-          <li><a className="hover:text-primary transition-colors" href="#">GitHub</a></li>
-          <li><a className="hover:text-primary transition-colors" href="#">Twitter / X</a></li>
-          <li><a className="hover:text-primary transition-colors" href="#">LinkedIn</a></li>
-        </ul>
-      </div>
-      <div className="flex flex-col gap-4">
-        <h4 className="font-bold">Newsletter</h4>
-        <p className="text-sm text-[#616f89] dark:text-gray-400">Updates on new experiments and releases.</p>
-        <div className="flex gap-2">
-          <input className="bg-white dark:bg-[#151c2a] border border-[#e5e7eb] dark:border-[#2a3441] text-sm rounded px-3 py-2 w-full focus:outline-none focus:border-primary text-slate-900 dark:text-white" placeholder="email@address.com" type="email" />
-          <button className="bg-primary text-white p-2 rounded hover:bg-primary/90">
-            <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
-          </button>
+        <div>
+          <h4 className="font-bold mb-4">Sitemap</h4>
+          <ul className="flex flex-col gap-2 text-sm text-[#616f89] dark:text-gray-400">
+            {siteConfig.footer.sections.sitemap.map((link: any, idx: number) => (
+              <li key={idx}><Link to={link.route} className="hover:text-primary transition-colors">{link.label}</Link></li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-bold mb-4">Social</h4>
+          <ul className="flex flex-col gap-2 text-sm text-[#616f89] dark:text-gray-400">
+            {siteConfig.footer.sections.social.map((link: any, idx: number) => (
+              <li key={idx}><a className="hover:text-primary transition-colors" href={link.url}>{link.label}</a></li>
+            ))}
+          </ul>
         </div>
       </div>
-    </div>
-    <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-[#616f89] dark:text-gray-500 font-mono border-t border-[#e5e7eb] dark:border-[#2a3441] pt-8 max-w-[1200px] mx-auto w-full">
-      <p>© 2024 sspirial.systems. All rights reserved.</p>
-      <div className="flex gap-6">
-        <a href="#">Privacy Policy</a>
-        <a href="#">Terms of Service</a>
-        <a href="#">System Status: Operational</a>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-[#616f89] dark:text-gray-500 font-mono border-t border-[#e5e7eb] dark:border-[#2a3441] pt-8 max-w-[1200px] mx-auto w-full">
+        <p>{siteConfig.footer.copyright}</p>
+        <div className="flex gap-6">
+          {siteConfig.footer.sections.legal.map((link: any, idx: number) => (
+            <a key={idx} href={link.url}>{link.label}</a>
+          ))}
+        </div>
       </div>
-    </div>
-  </footer>
-);
+    </footer>
+  );
+};
 
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(true);
+  const { config: siteConfig } = useSiteConfig();
 
   return (
     <HashRouter>
-      <AuthProvider>
-        <div className={`flex flex-col min-h-screen ${darkMode ? 'dark' : ''}`}>
-          <Header darkMode={darkMode} setDarkMode={setDarkMode} />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/research" element={<Research />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/admin" element={
-              <ProtectedRoute>
-                <Admin />
-              </ProtectedRoute>
-            } />
-          </Routes>
-          <Footer />
-          <LabAssistant />
-        </div>
-      </AuthProvider>
+      <ServicesProvider>
+        <AuthProvider>
+          <div className={`flex flex-col min-h-screen ${darkMode ? 'dark' : ''}`}>
+            <Header darkMode={darkMode} setDarkMode={setDarkMode} />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/research" element={<Research />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <Admin />
+                </ProtectedRoute>
+              } />
+            </Routes>
+            <Footer siteConfig={siteConfig} />
+            <LabAssistant />
+          </div>
+        </AuthProvider>
+      </ServicesProvider>
     </HashRouter>
   );
 };

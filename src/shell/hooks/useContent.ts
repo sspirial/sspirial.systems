@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, getDocsFromCache, getDocsFromServer } from 'firebase/firestore';
-import { db } from '@shell/firebase';
 import { Project, ResearchPost, TimelineItem } from '@core/types';
 import { useAuth } from '@shell/contexts/AuthContext';
+import { useDatabase } from '@shell/contexts/ServicesContext';
+import {
+  validateProjectArray,
+  validateResearchPostArray,
+  validateTimelineItemArray,
+} from '@shell/utils/validators';
 
-function useCollection<T>(collectionName: string) {
+function useCollection<T>(
+  collectionName: string,
+  validator: (items: unknown[]) => T[]
+) {
   const { isOwner, user } = useAuth();
+  const database = useDatabase();
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -13,38 +21,10 @@ function useCollection<T>(collectionName: string) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        let querySnapshot;
-
-        // Owner logged in: cache-first strategy
-        if (isOwner && user) {
-          try {
-            // Try cache first
-            querySnapshot = await getDocsFromCache(collection(db, collectionName));
-            if (!querySnapshot.empty) {
-              const fetchedData = querySnapshot.docs.map(docSnap => docSnap.data() as T);
-              setData(fetchedData);
-              setLoading(false);
-              return;
-            }
-          } catch (cacheErr) {
-            // Cache miss or error, fall through to server
-            console.debug(`Cache miss for ${collectionName}, fetching from server...`);
-          }
-
-          // Fall back to server if cache is empty
-          querySnapshot = await getDocsFromServer(collection(db, collectionName));
-        } else {
-          // Not logged in or not owner: server-first strategy
-          querySnapshot = await getDocsFromServer(collection(db, collectionName));
-        }
-
-        if (!querySnapshot.empty) {
-          const fetchedData = querySnapshot.docs.map(docSnap => docSnap.data() as T);
-          setData(fetchedData);
-        } else {
-          console.warn(`No data found in Firestore collection: ${collectionName}`);
-          setData([]);
-        }
+        // Use database service instead of Firebase directly
+        const rawData = await database.fetchCollection(collectionName);
+        const validatedData = validator(rawData);
+        setData(validatedData);
       } catch (err) {
         console.error(`Error fetching ${collectionName}:`, err);
         setError('Failed to load data.');
@@ -55,11 +35,14 @@ function useCollection<T>(collectionName: string) {
     };
 
     fetchData();
-  }, [collectionName, isOwner, user]);
+  }, [collectionName, database]);
 
   return { data, loading, error };
 }
 
-export const useProjects = () => useCollection<Project>('projects');
-export const useResearch = () => useCollection<ResearchPost>('research');
-export const useTimeline = () => useCollection<TimelineItem>('timeline');
+export const useProjects = () =>
+  useCollection<Project>('projects', validateProjectArray);
+export const useResearch = () =>
+  useCollection<ResearchPost>('research', validateResearchPostArray);
+export const useTimeline = () =>
+  useCollection<TimelineItem>('timeline', validateTimelineItemArray);

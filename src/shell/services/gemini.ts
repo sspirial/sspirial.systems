@@ -1,36 +1,54 @@
 import { GoogleGenAI } from '@google/genai';
+import { LAB_ASSISTANT_SYSTEM_INSTRUCTION } from '@core/gemini';
+import { Result, Ok, Err } from '@core/types';
 
-const SYSTEM_INSTRUCTION = `
-You are the sspirial.systems Lab Assistant.
-Your purpose is to help visitors understand the studio's R&D work.
-The studio focuses on:
-1. Autonomous Agents (distributed AI systems).
-2. Future Web Architecture (WebGPU, WASM, Rust).
-3. System Observability and Data Visualization.
-4. Generative Art and Creative Coding.
-
-Our current active projects are Fintech Core, Hyper-Index, Neural-Synth, and Void-Walker.
-We operate as an independent micro-studio to maintain agility.
-
-Respond in a professional, slightly futuristic, and concise manner. 
-Use technical terminology where appropriate but remain accessible.
-Always mention that the "Systems are Operational" if asked about status.
-`;
-
-export async function askLabAssistant(query: string) {
+/**
+ * Ask the Lab Assistant a question
+ * Returns Result type for better error handling
+ */
+export async function askLabAssistant(query: string): Promise<Result<string, string>> {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    if (!query || query.trim().length === 0) {
+      return Err('Query cannot be empty');
+    }
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY || '';
+    if (!apiKey) {
+      return Err('Gemini API key not configured');
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: query,
       config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
+        systemInstruction: LAB_ASSISTANT_SYSTEM_INSTRUCTION,
         temperature: 0.7,
       },
     });
-    return response.text || "I'm sorry, I couldn't process that signal. Please try again.";
+
+    const text = response.text?.trim();
+    if (!text) {
+      return Err('No response received from Lab Assistant');
+    }
+
+    return Ok(text);
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Error connecting to the lab core';
     console.error('Lab Assistant Error:', error);
-    return 'Error connecting to the lab core. Please check your network bridge.';
+    return Err(message);
   }
+}
+
+/**
+ * Convenience wrapper for components that want a simple string response
+ * Falls back to error message if Result is an error
+ */
+export async function askLabAssistantSimple(query: string): Promise<string> {
+  const result = await askLabAssistant(query);
+  if (result.ok === true) {
+    return result.value;
+  }
+  return `Error: ${result.error}`;
 }

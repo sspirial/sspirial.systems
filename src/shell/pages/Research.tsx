@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useResearch } from '@shell/hooks/useContent';
+import { useResearchPosts } from '@shell/hooks/useResearchPosts';
+import { useSiteConfig } from '@shell/hooks/useSiteConfig';
 
 const Research: React.FC = () => {
-  const { data: posts, loading } = useResearch();
+  const { posts, loading } = useResearchPosts();
+  const { config } = useSiteConfig();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [activeTab, setActiveTab] = React.useState('All Posts');
 
@@ -51,9 +53,9 @@ const Research: React.FC = () => {
 
       <div className="flex flex-col md:flex-row justify-between gap-6 mb-12">
         <div className="flex max-w-2xl flex-col gap-3">
-          <h1 className="text-slate-900 dark:text-white text-4xl md:text-5xl font-black leading-tight tracking-[-0.033em]">Knowledge Hub</h1>
+          <h1 className="text-slate-900 dark:text-white text-4xl md:text-5xl font-black leading-tight tracking-[-0.033em]">{config.research.heading}</h1>
           <p className="text-slate-500 dark:text-slate-400 text-lg font-normal leading-relaxed">
-            Research findings, technical documentation, and field notes from the lab. Exploring the intersection of systems, intelligence, and design.
+            {config.research.subtitle}
           </p>
         </div>
       </div>

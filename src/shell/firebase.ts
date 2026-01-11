@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
 import { enableIndexedDbPersistence, getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -15,6 +16,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 // Enable offline cache so edits queue locally and sync once back online
 enableIndexedDbPersistence(db).catch((error) => {
@@ -22,4 +24,4 @@ enableIndexedDbPersistence(db).catch((error) => {
   console.warn('Firestore persistence disabled:', error?.code ?? error);
 });
 
-export { app, analytics, db };
+export { app, analytics, db, storage };
