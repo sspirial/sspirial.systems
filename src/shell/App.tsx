@@ -139,31 +139,37 @@ const Footer: React.FC<{ siteConfig: any }> = ({ siteConfig }) => {
   );
 };
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [darkMode, setDarkMode] = useState(true);
   const { config: siteConfig } = useSiteConfig();
 
   return (
+    <div className={`flex flex-col min-h-screen ${darkMode ? 'dark' : ''}`}>
+      <Header darkMode={darkMode} setDarkMode={setDarkMode} />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/research" element={<Research />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <Admin />
+          </ProtectedRoute>
+        } />
+      </Routes>
+      <Footer siteConfig={siteConfig} />
+      <LabAssistant />
+    </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
     <HashRouter>
       <ServicesProvider>
         <AuthProvider>
-          <div className={`flex flex-col min-h-screen ${darkMode ? 'dark' : ''}`}>
-            <Header darkMode={darkMode} setDarkMode={setDarkMode} />
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/research" element={<Research />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/admin" element={
-                <ProtectedRoute>
-                  <Admin />
-                </ProtectedRoute>
-              } />
-            </Routes>
-            <Footer siteConfig={siteConfig} />
-            <LabAssistant />
-          </div>
+          <AppContent />
         </AuthProvider>
       </ServicesProvider>
     </HashRouter>
