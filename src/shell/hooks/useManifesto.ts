@@ -49,12 +49,13 @@ export function useManifesto() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const fetchManifesto = async () => {
-      try {
-        setLoading(true);
-        // Use database service instead of Firebase directly
-        const data = await database.fetchDocument<Partial<Manifesto<Heuristic, Self>>>('config', 'manifesto');
-        
+    setLoading(true);
+    
+    // Use real-time listener for automatic updates
+    const unsubscribe = database.onDocumentChange<Partial<Manifesto<Heuristic, Self>>>(
+      'config',
+      'manifesto',
+      (data) => {
         if (data) {
           setManifesto(normalizeManifesto(data));
           setError(null);
@@ -62,15 +63,11 @@ export function useManifesto() {
           setManifesto(createEmptyManifesto());
           setError(null);
         }
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to fetch manifesto'));
-        setManifesto(createEmptyManifesto());
-      } finally {
         setLoading(false);
       }
-    };
+    );
 
-    fetchManifesto();
+    return () => unsubscribe();
   }, [database]);
 
   return { manifesto, loading, error };

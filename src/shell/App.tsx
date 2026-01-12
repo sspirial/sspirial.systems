@@ -7,7 +7,6 @@ import Research from '@shell/pages/Research';
 import About from '@shell/pages/About';
 import Admin from '@shell/pages/Admin';
 import Login from '@shell/pages/Login';
-import LabAssistant from '@shell/components/LabAssistant';
 import { AuthProvider } from '@shell/contexts/AuthContext';
 import { ServicesProvider } from '@shell/contexts/ServicesContext';
 import ProtectedRoute from '@shell/components/ProtectedRoute';
@@ -159,7 +158,6 @@ const AppContent: React.FC = () => {
         } />
       </Routes>
       <Footer siteConfig={siteConfig} />
-      <LabAssistant />
     </div>
   );
 };

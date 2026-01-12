@@ -175,25 +175,23 @@ export function useSiteConfig() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchConfig = async () => {
-      try {
-        // Use database service instead of Firebase directly
-        const data = await database.fetchDocument<SiteConfig>('config', 'site');
-
+    setLoading(true);
+    
+    // Use real-time listener for automatic updates
+    const unsubscribe = database.onDocumentChange<SiteConfig>(
+      'config',
+      'site',
+      (data) => {
         if (data) {
           setConfig(normalizeSiteConfig(data));
         } else {
           setConfig(defaultSiteConfig);
         }
-      } catch (error) {
-        console.error('Error loading site config:', error);
-        setConfig(defaultSiteConfig);
-      } finally {
         setLoading(false);
       }
-    };
+    );
 
-    fetchConfig();
+    return () => unsubscribe();
   }, [database]);
 
   return { config, loading };

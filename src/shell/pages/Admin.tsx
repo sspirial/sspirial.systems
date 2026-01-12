@@ -131,10 +131,12 @@ const Admin: React.FC = () => {
   const siteConfigHook = useSiteConfig();
   
   const [items, setItems] = useState<EditableItem[]>([]);
+  const [originalItems, setOriginalItems] = useState<EditableItem[]>([]);
   const [heuristics, setHeuristics] = useState<Heuristic[]>([]);
   const [manifesto, setManifesto] = useState<Manifesto<Heuristic, Self>>(createEmptyManifesto());
   const [siteConfig, setSiteConfig] = useState<SiteConfig>(siteConfigHook.config);
   const [saving, setSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState<string | null>(null);
@@ -143,27 +145,34 @@ const Admin: React.FC = () => {
   useEffect(() => {
     setMessage(null);
     setExpandedKey(null);
+    setHasUnsavedChanges(false);
     
     if (activeTab === 'projects') {
       const keyed = attachKeys(projectsHook.projects as EditableItem[]);
       setItems(keyed);
+      setOriginalItems(keyed);
       setExpandedKey(deriveKey(keyed[0]));
     } else if (activeTab === 'research') {
       const keyed = attachKeys(researchHook.posts as EditableItem[]);
       setItems(keyed);
+      setOriginalItems(keyed);
       setExpandedKey(deriveKey(keyed[0]));
     } else if (activeTab === 'timeline') {
       const keyed = attachKeys(timelineHook.timeline as EditableItem[]);
       setItems(keyed);
+      setOriginalItems(keyed);
       setExpandedKey(deriveKey(keyed[0]));
     } else if (activeTab === 'heuristics') {
       setItems([]);
+      setOriginalItems([]);
       setHeuristics(heuristicsHook.heuristics);
     } else if (activeTab === 'manifesto') {
       setItems([]);
+      setOriginalItems([]);
       setManifesto(manifestoHook.manifesto ?? createEmptyManifesto());
     } else if (activeTab === 'siteConfig') {
       setItems([]);
+      setOriginalItems([]);
       setSiteConfig(siteConfigHook.config);
     }
   }, [activeTab, projectsHook.projects, researchHook.posts, timelineHook.timeline, heuristicsHook.heuristics, manifestoHook.manifesto, siteConfigHook.config]);
@@ -194,10 +203,12 @@ const Admin: React.FC = () => {
 
   const handleChange = <T extends Project | ResearchPost | TimelineItem>(index: number, update: Partial<T>) => {
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...update } : item)));
+    setHasUnsavedChanges(true);
   };
 
   const handleRemove = (index: number) => {
     setItems((prev) => prev.filter((_, i) => i !== index));
+    setHasUnsavedChanges(true);
     if (items[index]) {
       const key = getItemKey(items[index], index);
       setExpandedKey((prev) => (prev === key ? null : prev));
@@ -206,18 +217,31 @@ const Admin: React.FC = () => {
 
   const handleAddHeuristic = () => {
     setHeuristics(prev => [...prev, "Build for $0"]);
+    setHasUnsavedChanges(true);
   };
 
   const handleUpdateHeuristic = (index: number, value: Heuristic) => {
     setHeuristics(prev => prev.map((h, i) => i === index ? value : h));
+    setHasUnsavedChanges(true);
   };
 
   const handleRemoveHeuristic = (index: number) => {
     setHeuristics(prev => prev.filter((_, i) => i !== index));
+    setHasUnsavedChanges(true);
   };
 
   const handleUpdateManifesto = (field: string, value: any) => {
     setManifesto((prev) => ({ ...prev, [field]: value }));
+    setHasUnsavedChanges(true);
+  };
+
+  const updateSiteConfig = (update: Partial<SiteConfig> | ((prev: SiteConfig) => SiteConfig)) => {
+    if (typeof update === 'function') {
+      setSiteConfig(update);
+    } else {
+      setSiteConfig(prev => ({ ...prev, ...update }));
+    }
+    setHasUnsavedChanges(true);
   };
 
   const handleAddValue = () => {
@@ -234,6 +258,7 @@ const Admin: React.FC = () => {
         }
       ]
     }));
+    setHasUnsavedChanges(true);
   };
 
   const handleUpdateValue = (
@@ -254,6 +279,7 @@ const Admin: React.FC = () => {
           : value
       )
     }));
+    setHasUnsavedChanges(true);
   };
 
   const handleRemoveValue = (index: number) => {
@@ -261,6 +287,7 @@ const Admin: React.FC = () => {
       ...prev,
       values: prev.values.filter((_, i) => i !== index)
     }));
+    setHasUnsavedChanges(true);
   };
 
   const handleAddProgramItem = () => {
@@ -271,6 +298,7 @@ const Admin: React.FC = () => {
         items: [...prev.program.items, 'Build for $0']
       }
     }));
+    setHasUnsavedChanges(true);
   };
 
   const handleUpdateProgramItem = (index: number, value: Heuristic) => {
@@ -281,6 +309,7 @@ const Admin: React.FC = () => {
         items: prev.program.items.map((item, i) => (i === index ? value : item))
       }
     }));
+    setHasUnsavedChanges(true);
   };
 
   const handleRemoveProgramItem = (index: number) => {
@@ -291,6 +320,7 @@ const Admin: React.FC = () => {
         items: prev.program.items.filter((_, i) => i !== index)
       }
     }));
+    setHasUnsavedChanges(true);
   };
 
   const sanitizeManifesto = (data: Manifesto<Heuristic, Self>) => ({
@@ -322,32 +352,56 @@ const Admin: React.FC = () => {
       if (activeTab === 'siteConfig') {
         // Save site config
         const siteConfigRef = doc(db, 'config', 'site');
-        await setDoc(siteConfigRef, siteConfig, { merge: true });
-        setMessage({ type: 'success', text: 'Site configuration saved.' });
+        await setDoc(siteConfigRef, siteConfig);
+        console.log('✅ Site config saved to Firestore:', siteConfig);
+        setMessage({ type: 'success', text: 'Site configuration saved. Changes will sync when online.' });
       } else if (activeTab === 'heuristics') {
         // Save heuristics to manifesto config document
         const manifestoRef = doc(db, 'config', 'manifesto');
         const manifestoSnap = await getDoc(manifestoRef);
         const currentData = manifestoSnap.exists() ? manifestoSnap.data() : {};
-        await setDoc(manifestoRef, {
+        const payload = {
           ...currentData,
           program: {
             ...(currentData.program || {}),
             items: heuristics
           }
-        }, { merge: true });
-        setMessage({ type: 'success', text: 'Heuristics saved.' });
+        };
+        await setDoc(manifestoRef, payload);
+        console.log('✅ Heuristics saved to Firestore:', payload);
+        setMessage({ type: 'success', text: 'Heuristics saved. Changes will sync when online.' });
       } else if (activeTab === 'manifesto') {
         // Save full manifesto
         const manifestoRef = doc(db, 'config', 'manifesto');
         const payload = sanitizeManifesto(manifesto);
-        await setDoc(manifestoRef, payload, { merge: true });
-        setMessage({ type: 'success', text: 'Manifesto saved.' });
+        await setDoc(manifestoRef, payload);
+        console.log('✅ Manifesto saved to Firestore:', payload);
+        setMessage({ type: 'success', text: 'Manifesto saved. Changes will sync when online.' });
       } else {
         // Save collection-based data (projects, research, timeline)
         const batch = writeBatch(db);
         const collectionName = activeTab;
 
+        // Find deleted items (in original but not in current)
+        const currentIds = new Set(items.map(item => 
+          (item as any).id || (item as any).version || item.__key
+        ));
+        const deletedItems = originalItems.filter(item => {
+          const id = (item as any).id || (item as any).version || item.__key;
+          return id && !currentIds.has(id);
+        });
+
+        // Delete removed items
+        deletedItems.forEach((item) => {
+          const id = (item as any).id || (item as any).version || item.__key;
+          if (id) {
+            const docRef = doc(db, collectionName, id);
+            batch.delete(docRef);
+            console.log(`🗑️ Deleting ${collectionName}/${id}`);
+          }
+        });
+
+        // Update/create current items
         items.forEach((item) => {
           const id = (item as any).id || (item as any).version || item.__key || crypto.randomUUID();
           const docRef = doc(db, collectionName, id);
@@ -356,11 +410,17 @@ const Admin: React.FC = () => {
         });
 
         await batch.commit();
-        setMessage({ type: 'success', text: 'Content saved and synced.' });
+        console.log(`✅ ${collectionName} saved to Firestore (${items.length} items, ${deletedItems.length} deleted)`);
+        setMessage({ type: 'success', text: `${items.length} item(s) saved, ${deletedItems.length} deleted. Will sync when online.` });
+        
+        setHasUnsavedChanges(false);
+        // Update original items to reflect saved state (no more pending changes)
+        setOriginalItems([...items]);
       }
     } catch (error) {
-      console.error('Error saving content:', error);
-      setMessage({ type: 'error', text: 'Failed to save content.' });
+      console.error('❌ Error saving to Firestore:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setMessage({ type: 'error', text: `Failed to save: ${errorMessage}` });
     } finally {
       setSaving(false);
     }
@@ -1529,13 +1589,23 @@ const Admin: React.FC = () => {
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Editing</p>
                 <h2 className="text-xl font-semibold text-slate-900 dark:text-white">{tabLabels[activeTab]}</h2>
+                {hasUnsavedChanges && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-1">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    Unsaved local changes
+                  </p>
+                )}
               </div>
               <div className="flex flex-wrap gap-2 text-sm">
                 {!['heuristics', 'manifesto', 'siteConfig'].includes(activeTab) && (
                   <button onClick={handleAddItem} className={btnPrimary}>Add Entry</button>
                 )}
-                <button onClick={handleSave} disabled={saving} className={btnStrong}>
-                  {saving ? 'Saving…' : 'Save Changes'}
+                <button 
+                  onClick={handleSave} 
+                  disabled={saving || !hasUnsavedChanges} 
+                  className={`${btnStrong} ${!hasUnsavedChanges && !saving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {saving ? 'Syncing…' : hasUnsavedChanges ? 'Sync to Cloud' : 'All Synced ✓'}
                 </button>
               </div>
             </div>

@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Heuristic } from '@core/types';
 
@@ -14,12 +14,12 @@ export function useHeuristics() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const fetchHeuristics = async () => {
-      try {
-        setLoading(true);
-        const manifestoRef = doc(db, 'config', 'manifesto');
-        const snapshot = await getDoc(manifestoRef);
-        
+    const manifestoRef = doc(db, 'config', 'manifesto');
+    
+    const unsubscribe = onSnapshot(
+      manifestoRef,
+      { includeMetadataChanges: true },
+      (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data();
           const items: Heuristic[] = data?.program?.items || [];
@@ -29,15 +29,16 @@ export function useHeuristics() {
           setHeuristics([]);
           setError(new Error('Manifesto not found'));
         }
-      } catch (err) {
+        setLoading(false);
+      },
+      (err) => {
         setError(err instanceof Error ? err : new Error('Failed to fetch heuristics'));
         setHeuristics([]);
-      } finally {
         setLoading(false);
       }
-    };
+    );
 
-    fetchHeuristics();
+    return () => unsubscribe();
   }, []);
 
   return { heuristics, loading, error };

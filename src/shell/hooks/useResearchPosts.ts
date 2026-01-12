@@ -4,45 +4,24 @@
  */
 
 import { useState, useEffect } from 'react';
-import { collection, getDocs, getDocsFromCache, getDocsFromServer } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import type { ResearchPost } from '@core/types';
 
 export function useResearchPosts() {
-  const { isOwner, user } = useAuth();
+  const { isOwner } = useAuth();
   const [posts, setPosts] = useState<ResearchPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        setLoading(true);
-        let snapshot;
-        const postsRef = collection(db, 'research');
-
-        // Owner logged in: cache-first strategy
-        if (isOwner && user) {
-          try {
-            snapshot = await getDocsFromCache(postsRef);
-            if (!snapshot.empty) {
-              const postData: ResearchPost[] = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-              } as ResearchPost));
-              setPosts(postData);
-              setLoading(false);
-              return;
-            }
-          } catch (cacheErr) {
-            console.debug('Cache miss for research posts, fetching from server...');
-          }
-          snapshot = await getDocsFromServer(postsRef);
-        } else {
-          snapshot = await getDocsFromServer(postsRef);
-        }
-        
+    const postsRef = collection(db, 'research');
+    
+    const unsubscribe = onSnapshot(
+      postsRef,
+      { includeMetadataChanges: true },
+      (snapshot) => {
         const postData: ResearchPost[] = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
@@ -50,16 +29,25 @@ export function useResearchPosts() {
         
         setPosts(postData);
         setError(null);
-      } catch (err) {
+        setLoading(false);
+
+        if (isOwner && snapshot.metadata.hasPendingWrites) {
+          console.log('📝 Research posts have pending writes');
+        } else if (isOwner && snapshot.metadata.fromCache) {
+          console.log('💾 Research posts loaded from cache');
+        } else if (isOwner) {
+          console.log('☁️ Research posts synced from server');
+        }
+      },
+      (err) => {
         setError(err instanceof Error ? err : new Error('Failed to fetch research posts'));
         setPosts([]);
-      } finally {
         setLoading(false);
       }
-    };
+    );
 
-    fetchPosts();
-  }, [isOwner, user]);
+    return () => unsubscribe();
+  }, [isOwner]);
 
   return { posts, loading, error };
 }
