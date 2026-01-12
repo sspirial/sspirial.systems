@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
-import { enableIndexedDbPersistence, getFirestore } from 'firebase/firestore';
+import { enableIndexedDbPersistence, getFirestore, initializeFirestore, CACHE_SIZE_UNLIMITED } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -14,14 +14,31 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
 
-// Enable offline cache so edits queue locally and sync once back online
-enableIndexedDbPersistence(db).catch((error) => {
-  // Ignore persistence failures (multiple tabs) to keep app usable
-  console.warn('Firestore persistence disabled:', error?.code ?? error);
+// Lazy initialize analytics only when needed
+let analyticsInstance: any = null;
+export const getAnalyticsLazy = () => {
+  if (!analyticsInstance && typeof window !== 'undefined') {
+    analyticsInstance = getAnalytics(app);
+  }
+  return analyticsInstance;
+};
+
+// Initialize Firestore with optimizations
+const db = initializeFirestore(app, {
+  cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+  experimentalForceLongPolling: false,
+  experimentalAutoDetectLongPolling: true
 });
 
-export { app, analytics, db, storage };
+const storage = getStorage(app);
+
+// Enable offline cache asynchronously
+if (typeof window !== 'undefined') {
+  enableIndexedDbPersistence(db).catch((error) => {
+    // Persistence not critical for initial load
+  });
+}
+
+export { app, db, storage };
+export const analytics = analyticsInstance;

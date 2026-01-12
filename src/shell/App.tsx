@@ -1,16 +1,16 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { HashRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, lazy, Suspense, memo } from 'react';
+import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import LogoIcon from '@shell/components/LogoIcon';
 import { AuthProvider } from '@shell/contexts/AuthContext';
 import { ServicesProvider } from '@shell/contexts/ServicesContext';
 import ProtectedRoute from '@shell/components/ProtectedRoute';
 import { useSiteConfig } from '@shell/hooks/useSiteConfig';
 
-// Lazy load pages for code-splitting
-const Home = lazy(() => import('@shell/pages/Home'));
-const Projects = lazy(() => import('@shell/pages/Projects'));
+// Lazy load pages for code-splitting with prefetch hints
+const Home = lazy(() => import(/* webpackPrefetch: true */ '@shell/pages/Home'));
+const Projects = lazy(() => import(/* webpackPrefetch: true */ '@shell/pages/Projects'));
 const ProjectView = lazy(() => import('@shell/pages/ProjectView'));
-const Research = lazy(() => import('@shell/pages/Research'));
+const Research = lazy(() => import(/* webpackPrefetch: true */ '@shell/pages/Research'));
 const ResearchView = lazy(() => import('@shell/pages/ResearchView'));
 const About = lazy(() => import('@shell/pages/About'));
 const Admin = lazy(() => import('@shell/pages/Admin'));
@@ -18,7 +18,7 @@ const Login = lazy(() => import('@shell/pages/Login'));
 const PrivacyPolicy = lazy(() => import('@shell/pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('@shell/pages/TermsOfService'));
 
-const Header: React.FC<{ darkMode: boolean; setDarkMode: (v: boolean) => void }> = ({ darkMode, setDarkMode }) => {
+const Header: React.FC<{ darkMode: boolean; setDarkMode: (v: boolean) => void }> = memo(({ darkMode, setDarkMode }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -107,9 +107,11 @@ const Header: React.FC<{ darkMode: boolean; setDarkMode: (v: boolean) => void }>
       )}
     </header>
   );
-};
+});
 
-const Footer: React.FC<{ siteConfig: any }> = ({ siteConfig }) => {
+Header.displayName = 'Header';
+
+const Footer: React.FC<{ siteConfig: any }> = memo(({ siteConfig }) => {
   return (
     <footer className="mt-auto border-t border-[#e5e7eb] dark:border-white/10 pt-16 pb-8 px-6 lg:px-12 bg-white dark:bg-background-dark">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16 max-w-[1200px] mx-auto w-full">
@@ -155,16 +157,32 @@ const Footer: React.FC<{ siteConfig: any }> = ({ siteConfig }) => {
       </div>
     </footer>
   );
-};
+});
+
+Footer.displayName = 'Footer';
+
+// Optimized loading spinner component
+const LoadingSpinner = memo(() => (
+  <div className="flex items-center justify-center min-h-[50vh]">
+    <div className="flex flex-col items-center gap-4" role="status" aria-live="polite">
+      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
+      <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+    </div>
+  </div>
+));
+
+LoadingSpinner.displayName = 'LoadingSpinner';
 
 const AppContent: React.FC = () => {
   const [darkMode, setDarkMode] = useState(true);
   const { config: siteConfig } = useSiteConfig();
   const location = useLocation();
 
-  // Scroll to top on route change
+  // Scroll to top on route change with RAF for better performance
   useEffect(() => {
-    window.scrollTo(0, 0);
+    requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
+    });
   }, [location.pathname]);
 
   return (
@@ -173,14 +191,7 @@ const AppContent: React.FC = () => {
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <Header darkMode={darkMode} setDarkMode={setDarkMode} />
       <main id="main-content" role="main" className="focus:outline-none">
-        <Suspense fallback={
-          <div className="flex items-center justify-center min-h-[50vh]">
-            <div className="flex flex-col items-center gap-4" role="status" aria-live="polite">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
-            </div>
-          </div>
-        }>
+        <Suspense fallback={<LoadingSpinner />}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/projects" element={<Projects />} />
@@ -206,13 +217,13 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <ServicesProvider>
         <AuthProvider>
           <AppContent />
         </AuthProvider>
       </ServicesProvider>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 
