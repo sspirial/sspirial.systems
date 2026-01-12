@@ -2,12 +2,16 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useResearchPosts } from '@shell/hooks/useResearchPosts';
 import { useSiteConfig } from '@shell/hooks/useSiteConfig';
+import { MarkdownViewer } from '@shell/components/MarkdownViewer';
+import { fetchResearchDoc } from '@shell/services/github-impl';
+import { ResearchPost } from '@core/types';
 
 const Research: React.FC = () => {
   const { posts, loading } = useResearchPosts();
   const { config } = useSiteConfig();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [activeTab, setActiveTab] = React.useState('All Posts');
+  const [selectedResearch, setSelectedResearch] = React.useState<ResearchPost | null>(null);
 
   const featured = posts.find(p => p.featured);
 
@@ -132,10 +136,15 @@ const Research: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {others.map((post) => (
-          <article key={post.id} className="flex flex-col bg-white dark:bg-surface-dark rounded-xl p-6 border border-gray-200 dark:border-white/10 hover:border-primary/40 dark:hover:border-primary/40 transition-all hover:shadow-lg hover:shadow-gray-100 dark:hover:shadow-none group h-full">
+          <article key={post.id} className="flex flex-col bg-white dark:bg-surface-dark rounded-xl p-6 border border-gray-200 dark:border-white/10 hover:border-primary/40 dark:hover:border-primary/40 transition-all hover:shadow-lg hover:shadow-gray-100 dark:hover:shadow-none group h-full cursor-pointer" onClick={() => post.repositoryUrl && setSelectedResearch(post)}>
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-mono text-primary bg-primary/10 px-2 py-1 rounded">{post.category}</span>
-              <span className="text-xs font-mono text-slate-400">{post.date}</span>
+              <div className="flex items-center gap-2">
+                {post.repositoryUrl && (
+                  <span className="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors text-sm" title="Has linked repository">link</span>
+                )}
+                <span className="text-xs font-mono text-slate-400">{post.date}</span>
+              </div>
             </div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 leading-tight group-hover:text-primary transition-colors">
               {post.title}
@@ -160,6 +169,30 @@ const Research: React.FC = () => {
           </div>
         )}
       </div>
+
+      {selectedResearch && selectedResearch.repositoryUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-surface-dark rounded-xl max-w-3xl w-full max-h-[80vh] overflow-auto shadow-xl border border-gray-200 dark:border-white/10">
+            <div className="sticky top-0 bg-white dark:bg-surface-dark border-b border-gray-200 dark:border-white/10 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                {selectedResearch.title} · RESEARCH.md
+              </h2>
+              <button
+                onClick={() => setSelectedResearch(null)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded transition-colors"
+              >
+                <span className="material-symbols-outlined text-slate-600 dark:text-slate-300">close</span>
+              </button>
+            </div>
+            <div className="p-6">
+              <MarkdownViewer
+                fetchMarkdown={() => fetchResearchDoc(selectedResearch.repositoryUrl!)}
+                fileName="RESEARCH.md"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };

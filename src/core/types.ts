@@ -62,6 +62,10 @@ export interface Project {
   status: 'Active' | 'Archived' | 'Deprecated' | 'Research';
   version?: string;
   color: string;
+  repositoryUrl?: string;
+  projectUrl?: string;
+  projectLinkType?: 'repository' | 'external';
+  featured?: boolean;
 }
 
 export interface ResearchPost {
@@ -74,6 +78,7 @@ export interface ResearchPost {
   readTime: string;
   imageUrl?: string;
   featured?: boolean;
+  repositoryUrl?: string;
 }
 
 export interface TimelineItem {
@@ -146,5 +151,11 @@ export interface SiteConfig {
       social: Array<{ label: string; url: string }>;
       legal: Array<{ label: string; url: string }>;
     };
+  };
+  
+  // Legal pages
+  legal: {
+    privacyPolicy: string;
+    termsOfService: string;
   };
 }

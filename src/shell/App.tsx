@@ -1,16 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { HashRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import LogoIcon from '@shell/components/LogoIcon';
-import Home from '@shell/pages/Home';
-import Projects from '@shell/pages/Projects';
-import Research from '@shell/pages/Research';
-import About from '@shell/pages/About';
-import Admin from '@shell/pages/Admin';
-import Login from '@shell/pages/Login';
 import { AuthProvider } from '@shell/contexts/AuthContext';
 import { ServicesProvider } from '@shell/contexts/ServicesContext';
 import ProtectedRoute from '@shell/components/ProtectedRoute';
 import { useSiteConfig } from '@shell/hooks/useSiteConfig';
+
+// Lazy load pages for code-splitting
+const Home = lazy(() => import('@shell/pages/Home'));
+const Projects = lazy(() => import('@shell/pages/Projects'));
+const Research = lazy(() => import('@shell/pages/Research'));
+const About = lazy(() => import('@shell/pages/About'));
+const Admin = lazy(() => import('@shell/pages/Admin'));
+const Login = lazy(() => import('@shell/pages/Login'));
+const PrivacyPolicy = lazy(() => import('@shell/pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('@shell/pages/TermsOfService'));
 
 const Header: React.FC<{ darkMode: boolean; setDarkMode: (v: boolean) => void }> = ({ darkMode, setDarkMode }) => {
   const navigate = useNavigate();
@@ -129,9 +133,13 @@ const Footer: React.FC<{ siteConfig: any }> = ({ siteConfig }) => {
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-[#616f89] dark:text-gray-500 font-mono border-t border-[#e5e7eb] dark:border-[#2a3441] pt-8 max-w-[1200px] mx-auto w-full">
         <p>{siteConfig.footer.copyright}</p>
         <div className="flex gap-6">
-          {siteConfig.footer.sections.legal.map((link: any, idx: number) => (
-            <a key={idx} href={link.url}>{link.label}</a>
-          ))}
+          {siteConfig.footer.sections.legal.map((link: any, idx: number) => 
+            link.url.startsWith('/') ? (
+              <Link key={idx} to={link.url} className="hover:text-primary transition-colors">{link.label}</Link>
+            ) : (
+              <a key={idx} href={link.url}>{link.label}</a>
+            )
+          )}
         </div>
       </div>
     </footer>
@@ -145,18 +153,29 @@ const AppContent: React.FC = () => {
   return (
     <div className={`flex flex-col min-h-screen ${darkMode ? 'dark' : ''}`}>
       <Header darkMode={darkMode} setDarkMode={setDarkMode} />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/research" element={<Research />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/admin" element={
-          <ProtectedRoute>
-            <Admin />
-          </ProtectedRoute>
-        } />
-      </Routes>
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+          </div>
+        </div>
+      }>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/research" element={<Research />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <Admin />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </Suspense>
       <Footer siteConfig={siteConfig} />
     </div>
   );

@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useProjects } from '@shell/hooks/useContent';
 import { useSiteConfig } from '@shell/hooks/useSiteConfig';
+import { ProjectCard } from '@shell/components/ProjectCard';
+import { MarkdownViewer } from '@shell/components/MarkdownViewer';
+import { fetchReadme } from '@shell/services/github-impl';
+import { Project } from '@core/types';
 
 const Home: React.FC = () => {
   const { data: projects } = useProjects();
   const { config } = useSiteConfig();
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden">
@@ -87,28 +92,39 @@ const Home: React.FC = () => {
               </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {projects.slice(0, 3).map((project) => (
-                <div key={project.id} className="group flex flex-col gap-4 p-2 rounded-xl transition-all hover:bg-white hover:shadow-xl dark:hover:bg-[#151c2a] border border-transparent hover:border-[#e5e7eb] dark:hover:border-[#2a3441]">
-                  <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-gray-200">
-                    <div className="absolute top-3 left-3 z-10 bg-black/70 backdrop-blur text-white text-[10px] font-mono px-2 py-1 rounded">{project.id}</div>
-                    <div className="w-full h-full bg-center bg-no-repeat bg-cover transform group-hover:scale-105 transition-transform duration-500" style={{ backgroundImage: `url('${project.image}')` }}></div>
-                  </div>
-                  <div className="px-2 pb-2">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-[#111318] dark:text-white text-xl font-bold leading-tight group-hover:text-primary transition-colors">{project.title}</h3>
-                      <span className="material-symbols-outlined text-[#616f89] group-hover:text-primary transition-colors transform group-hover:translate-x-1">north_east</span>
-                    </div>
-                    <p className="text-[#616f89] dark:text-gray-400 text-sm mb-4 line-clamp-2">{project.description}</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {project.tags.map(tag => (
-                        <span key={tag} className="px-2 py-1 bg-gray-100 dark:bg-[#1a2332] text-[#616f89] dark:text-gray-400 text-xs font-mono rounded">{tag}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+              {projects.filter((p) => p.featured).map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onReadmeClick={() => project.repositoryUrl && setSelectedProject(project)}
+                />
               ))}
             </div>
           </section>
+
+          {selectedProject && selectedProject.repositoryUrl && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4">
+              <div className="bg-white dark:bg-surface-dark rounded-xl max-w-3xl w-full max-h-[80vh] overflow-auto shadow-xl border border-gray-200 dark:border-white/10">
+                <div className="sticky top-0 bg-white dark:bg-surface-dark border-b border-gray-200 dark:border-white/10 px-6 py-4 flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                    {selectedProject.title} · README.md
+                  </h2>
+                  <button
+                    onClick={() => setSelectedProject(null)}
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-slate-600 dark:text-slate-300">close</span>
+                  </button>
+                </div>
+                <div className="p-6">
+                  <MarkdownViewer
+                    fetchMarkdown={() => fetchReadme(selectedProject.repositoryUrl!)}
+                    fileName="README.md"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <section className="py-16 lg:py-24 border-t border-[#e5e7eb] dark:border-white/10">
             <div className="flex flex-col gap-12">

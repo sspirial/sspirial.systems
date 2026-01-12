@@ -10,6 +10,7 @@ import {
   Project,
   ResearchPost,
   TimelineItem,
+  SiteConfig,
 } from '../types';
 
 /**
@@ -30,6 +31,57 @@ export function createEmptyManifesto(): Manifesto<Heuristic, Self> {
     execution: {
       promise: '',
       summons: null,
+    },
+  };
+}
+
+/**
+ * Factory function to create an empty SiteConfig
+ */
+export function createEmptySiteConfig(): SiteConfig {
+  return {
+    version: '1.0',
+    statusLabel: 'SYSTEMS OPERATIONAL',
+    hero: {
+      tagline: '',
+      highlight: '',
+      description: '',
+      imageUrl: '',
+    },
+    currentFocus: {
+      label: '',
+      availability: '',
+    },
+    systemsMarquee: [],
+    focusAreas: [],
+    about: {
+      heading: '',
+      subtitle: '',
+      imageUrl: '',
+      corePhilosophy: '',
+      corePhilosophySubtitle: '',
+      philosophyCards: [],
+    },
+    projects: {
+      heading: '',
+      subtitle: '',
+    },
+    research: {
+      heading: '',
+      subtitle: '',
+    },
+    footer: {
+      bio: '',
+      copyright: '',
+      sections: {
+        sitemap: [],
+        social: [],
+        legal: [],
+      },
+    },
+    legal: {
+      privacyPolicy: '',
+      termsOfService: '',
     },
   };
 }

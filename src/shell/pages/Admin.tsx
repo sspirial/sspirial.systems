@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { collection, doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Project, ResearchPost, TimelineItem, Heuristic, Manifesto, Self, SiteConfig } from '@core/types';
@@ -11,8 +11,10 @@ import { useHeuristics } from '@shell/hooks/useHeuristics';
 import { useManifesto } from '@shell/hooks/useManifesto';
 import { createEmptyManifesto } from '@core/models';
 import { useSiteConfig } from '@shell/hooks/useSiteConfig';
+import { MarkdownViewer } from '@shell/components/MarkdownViewer';
+import { fetchReadme, fetchResearchDoc } from '@shell/services/github-impl';
 
-type TabKey = 'projects' | 'research' | 'timeline' | 'heuristics' | 'manifesto' | 'siteConfig';
+type TabKey = 'projects' | 'research' | 'timeline' | 'heuristics' | 'manifesto' | 'siteConfig' | 'legal';
 type EditableItem = (Project | ResearchPost | TimelineItem) & { __key?: string };
 
 const inputClass = 'w-full rounded-lg border border-gray-200 dark:border-white/10 bg-surface-light dark:bg-surface-dark px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/70';
@@ -29,7 +31,8 @@ const tabLabels: Record<TabKey, string> = {
   timeline: 'Timeline',
   heuristics: 'Heuristics',
   manifesto: 'Manifesto',
-  siteConfig: 'Site Config'
+  siteConfig: 'Site Config',
+  legal: 'Legal'
 };
 
 const emptyTemplates: Partial<Record<TabKey, () => Project | ResearchPost | TimelineItem>> = {
@@ -42,7 +45,8 @@ const emptyTemplates: Partial<Record<TabKey, () => Project | ResearchPost | Time
     type: 'Tool',
     status: 'Active',
     version: '',
-    color: 'bg-primary'
+    color: 'bg-primary',
+    featured: false
   }),
   research: () => ({
     id: `RES-${Date.now()}`,
@@ -120,7 +124,8 @@ const materialIconOptions = [
 
 const Admin: React.FC = () => {
   const { logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabKey>('projects');
+  const [activeTab, setActiveTabState] = useState<TabKey>('projects');
+  const [pendingTab, setPendingTab] = useState<TabKey | null>(null);
   
   // Use the woven hooks from Shell
   const projectsHook = useProjects();
@@ -141,27 +146,48 @@ const Admin: React.FC = () => {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState<string | null>(null);
 
-  // Sync hook data to local state when tab changes
+  // Handle tab switching with unsaved changes confirmation
+  const handleSetActiveTab = (tab: TabKey) => {
+    if (hasUnsavedChanges) {
+      setPendingTab(tab);
+      setMessage({ type: 'error', text: 'You have unsaved changes. Save or discard them before switching tabs.' });
+    } else {
+      setActiveTabState(tab);
+      setMessage(null);
+    }
+  };
+
+  const handleDiscardChanges = () => {
+    setHasUnsavedChanges(false);
+    if (pendingTab) {
+      setActiveTabState(pendingTab);
+      setPendingTab(null);
+    }
+    setMessage(null);
+  };
+
+  // Sync hook data to local state when tab changes (only if no unsaved changes)
   useEffect(() => {
+    if (hasUnsavedChanges) return; // Preserve local edits if there are unsaved changes
+    
     setMessage(null);
     setExpandedKey(null);
-    setHasUnsavedChanges(false);
     
     if (activeTab === 'projects') {
       const keyed = attachKeys(projectsHook.projects as EditableItem[]);
       setItems(keyed);
       setOriginalItems(keyed);
-      setExpandedKey(deriveKey(keyed[0]));
+      setExpandedKey(deriveKey(keyed[keyed.length - 1]));
     } else if (activeTab === 'research') {
       const keyed = attachKeys(researchHook.posts as EditableItem[]);
       setItems(keyed);
       setOriginalItems(keyed);
-      setExpandedKey(deriveKey(keyed[0]));
+      setExpandedKey(deriveKey(keyed[keyed.length - 1]));
     } else if (activeTab === 'timeline') {
       const keyed = attachKeys(timelineHook.timeline as EditableItem[]);
       setItems(keyed);
       setOriginalItems(keyed);
-      setExpandedKey(deriveKey(keyed[0]));
+      setExpandedKey(deriveKey(keyed[keyed.length - 1]));
     } else if (activeTab === 'heuristics') {
       setItems([]);
       setOriginalItems([]);
@@ -174,8 +200,12 @@ const Admin: React.FC = () => {
       setItems([]);
       setOriginalItems([]);
       setSiteConfig(siteConfigHook.config);
+    } else if (activeTab === 'legal') {
+      setItems([]);
+      setOriginalItems([]);
+      setSiteConfig(siteConfigHook.config);
     }
-  }, [activeTab, projectsHook.projects, researchHook.posts, timelineHook.timeline, heuristicsHook.heuristics, manifestoHook.manifesto, siteConfigHook.config]);
+  }, [activeTab, projectsHook.projects, researchHook.posts, timelineHook.timeline, heuristicsHook.heuristics, manifestoHook.manifesto, siteConfigHook.config, hasUnsavedChanges]);
   
   const loading = projectsHook.loading || researchHook.loading || timelineHook.loading || heuristicsHook.loading || manifestoHook.loading || siteConfigHook.loading;
 
@@ -196,7 +226,7 @@ const Admin: React.FC = () => {
   const handleAddItem = () => {
     if (activeTab in emptyTemplates) {
       const template = { ...emptyTemplates[activeTab]!(), __key: crypto.randomUUID() } as EditableItem;
-      setItems((prev) => [template, ...prev]);
+      setItems((prev) => [...prev, template]);
       setExpandedKey(deriveKey(template));
     }
   };
@@ -349,12 +379,12 @@ const Admin: React.FC = () => {
     setSaving(true);
     setMessage(null);
     try {
-      if (activeTab === 'siteConfig') {
-        // Save site config
+      if (activeTab === 'siteConfig' || activeTab === 'legal') {
+        // Save site config (includes legal)
         const siteConfigRef = doc(db, 'config', 'site');
         await setDoc(siteConfigRef, siteConfig);
         console.log('✅ Site config saved to Firestore:', siteConfig);
-        setMessage({ type: 'success', text: 'Site configuration saved. Changes will sync when online.' });
+        setMessage({ type: 'success', text: 'Configuration saved. Changes will sync when online.' });
       } else if (activeTab === 'heuristics') {
         // Save heuristics to manifesto config document
         const manifestoRef = doc(db, 'config', 'manifesto');
@@ -863,6 +893,18 @@ const Admin: React.FC = () => {
                   />
                 </div>
               ))}
+              <button
+                onClick={() => setSiteConfig({
+                  ...siteConfig,
+                  about: {
+                    ...siteConfig.about,
+                    philosophyCards: [...siteConfig.about.philosophyCards, { icon: 'lightbulb', title: '', description: '' }]
+                  }
+                })}
+                className={btnPrimary}
+              >
+                Add Philosophy Card
+              </button>
             </div>
           </div>
         </div>
@@ -954,7 +996,26 @@ const Admin: React.FC = () => {
 
             {/* Sitemap */}
             <div className="border-t pt-4">
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-3">Sitemap Links</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Sitemap Links</p>
+                <button 
+                  onClick={() => {
+                    updateSiteConfig({
+                      ...siteConfig,
+                      footer: {
+                        ...siteConfig.footer,
+                        sections: {
+                          ...siteConfig.footer.sections,
+                          sitemap: [...siteConfig.footer.sections.sitemap, { label: '', route: '' }]
+                        }
+                      }
+                    });
+                  }}
+                  className={btnPrimary}
+                >
+                  Add Sitemap Link
+                </button>
+              </div>
               {siteConfig.footer.sections.sitemap.map((link, idx) => (
                 <div key={idx} className="flex gap-2 items-center mb-2">
                   <input
@@ -963,7 +1024,7 @@ const Admin: React.FC = () => {
                     onChange={(e) => {
                       const updated = [...siteConfig.footer.sections.sitemap];
                       updated[idx].label = e.target.value;
-                      setSiteConfig({
+                      updateSiteConfig({
                         ...siteConfig,
                         footer: { ...siteConfig.footer, sections: { ...siteConfig.footer.sections, sitemap: updated } }
                       });
@@ -976,20 +1037,50 @@ const Admin: React.FC = () => {
                     onChange={(e) => {
                       const updated = [...siteConfig.footer.sections.sitemap];
                       updated[idx].route = e.target.value;
-                      setSiteConfig({
+                      updateSiteConfig({
                         ...siteConfig,
                         footer: { ...siteConfig.footer, sections: { ...siteConfig.footer.sections, sitemap: updated } }
                       });
                     }}
                     className="flex-1 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
                   />
+                  <button 
+                    onClick={() => {
+                      const updated = siteConfig.footer.sections.sitemap.filter((_, i) => i !== idx);
+                      updateSiteConfig({
+                        ...siteConfig,
+                        footer: { ...siteConfig.footer, sections: { ...siteConfig.footer.sections, sitemap: updated } }
+                      });
+                    }}
+                    className="text-red-600 hover:text-red-700 text-sm px-3"
+                  >
+                    Remove
+                  </button>
                 </div>
               ))}
             </div>
 
             {/* Social */}
             <div className="border-t pt-4">
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-3">Social Links</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Social Links</p>
+                <button 
+                  onClick={() => {
+                    updateSiteConfig({
+                      footer: {
+                        ...siteConfig.footer,
+                        sections: {
+                          ...siteConfig.footer.sections,
+                          social: [...siteConfig.footer.sections.social, { label: '', url: '' }]
+                        }
+                      }
+                    });
+                  }}
+                  className={btnPrimary}
+                >
+                  Add Social Link
+                </button>
+              </div>
               {siteConfig.footer.sections.social.map((link, idx) => (
                 <div key={idx} className="flex gap-2 items-center mb-2">
                   <input
@@ -998,7 +1089,7 @@ const Admin: React.FC = () => {
                     onChange={(e) => {
                       const updated = [...siteConfig.footer.sections.social];
                       updated[idx].label = e.target.value;
-                      setSiteConfig({
+                      updateSiteConfig({
                         ...siteConfig,
                         footer: { ...siteConfig.footer, sections: { ...siteConfig.footer.sections, social: updated } }
                       });
@@ -1011,20 +1102,51 @@ const Admin: React.FC = () => {
                     onChange={(e) => {
                       const updated = [...siteConfig.footer.sections.social];
                       updated[idx].url = e.target.value;
-                      setSiteConfig({
+                      updateSiteConfig({
                         ...siteConfig,
                         footer: { ...siteConfig.footer, sections: { ...siteConfig.footer.sections, social: updated } }
                       });
                     }}
                     className="flex-1 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
                   />
+                  <button 
+                    onClick={() => {
+                      const updated = siteConfig.footer.sections.social.filter((_, i) => i !== idx);
+                      updateSiteConfig({
+                        ...siteConfig,
+                        footer: { ...siteConfig.footer, sections: { ...siteConfig.footer.sections, social: updated } }
+                      });
+                    }}
+                    className="text-red-600 hover:text-red-700 text-sm px-3"
+                  >
+                    Remove
+                  </button>
                 </div>
               ))}
             </div>
 
             {/* Legal */}
             <div className="border-t pt-4">
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-3">Legal Links</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Legal Links</p>
+                <button 
+                  onClick={() => {
+                    updateSiteConfig({
+                      ...siteConfig,
+                      footer: {
+                        ...siteConfig.footer,
+                        sections: {
+                          ...siteConfig.footer.sections,
+                          legal: [...siteConfig.footer.sections.legal, { label: '', url: '' }]
+                        }
+                      }
+                    });
+                  }}
+                  className={btnPrimary}
+                >
+                  Add Legal Link
+                </button>
+              </div>
               {siteConfig.footer.sections.legal.map((link, idx) => (
                 <div key={idx} className="flex gap-2 items-center mb-2">
                   <input
@@ -1033,7 +1155,7 @@ const Admin: React.FC = () => {
                     onChange={(e) => {
                       const updated = [...siteConfig.footer.sections.legal];
                       updated[idx].label = e.target.value;
-                      setSiteConfig({
+                      updateSiteConfig({
                         ...siteConfig,
                         footer: { ...siteConfig.footer, sections: { ...siteConfig.footer.sections, legal: updated } }
                       });
@@ -1046,17 +1168,73 @@ const Admin: React.FC = () => {
                     onChange={(e) => {
                       const updated = [...siteConfig.footer.sections.legal];
                       updated[idx].url = e.target.value;
-                      setSiteConfig({
+                      updateSiteConfig({
                         ...siteConfig,
                         footer: { ...siteConfig.footer, sections: { ...siteConfig.footer.sections, legal: updated } }
                       });
                     }}
                     className="flex-1 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
                   />
+                  <button 
+                    onClick={() => {
+                      const updated = siteConfig.footer.sections.legal.filter((_, i) => i !== idx);
+                      updateSiteConfig({
+                        ...siteConfig,
+                        footer: { ...siteConfig.footer, sections: { ...siteConfig.footer.sections, legal: updated } }
+                      });
+                    }}
+                    className="text-red-600 hover:text-red-700 text-sm px-3"
+                  >
+                    Remove
+                  </button>
                 </div>
               ))}
             </div>
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderLegalEditor = () => {
+    return (
+      <div className="space-y-6 max-w-4xl">
+        {/* Privacy Policy */}
+        <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-surface-light dark:bg-surface-dark p-6">
+          <h3 className="font-bold text-lg mb-4 text-slate-900 dark:text-white">Privacy Policy</h3>
+          <label className="flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-300">
+            <textarea
+              value={siteConfig.legal.privacyPolicy}
+              onChange={(e) => setSiteConfig({
+                ...siteConfig,
+                legal: { ...siteConfig.legal, privacyPolicy: e.target.value }
+              })}
+              className={`${textAreaClass} min-h-[400px]`}
+              placeholder="Enter your privacy policy content here..."
+            />
+          </label>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+            Supports Markdown formatting. This content will be displayed on the /privacy-policy page.
+          </p>
+        </div>
+
+        {/* Terms of Service */}
+        <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-surface-light dark:bg-surface-dark p-6">
+          <h3 className="font-bold text-lg mb-4 text-slate-900 dark:text-white">Terms of Service</h3>
+          <label className="flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-300">
+            <textarea
+              value={siteConfig.legal.termsOfService}
+              onChange={(e) => setSiteConfig({
+                ...siteConfig,
+                legal: { ...siteConfig.legal, termsOfService: e.target.value }
+              })}
+              className={`${textAreaClass} min-h-[400px]`}
+              placeholder="Enter your terms of service content here..."
+            />
+          </label>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+            Supports Markdown formatting. This content will be displayed on the /terms-of-service page.
+          </p>
         </div>
       </div>
     );
@@ -1324,6 +1502,15 @@ const Admin: React.FC = () => {
             className={inputClass}
           />
         </label>
+        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <input
+            type="checkbox"
+            checked={p.featured || false}
+            onChange={(e) => handleChange<Project>(index, { featured: e.target.checked })}
+            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+          />
+          <span>Featured on Home Page</span>
+        </label>
         <label className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-300">
           Color (Tailwind class)
           <input
@@ -1332,6 +1519,55 @@ const Admin: React.FC = () => {
             className={inputClass}
           />
         </label>
+        <label className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-300 md:col-span-2">
+          GitHub Repository URL (optional)
+          <input
+            value={p.repositoryUrl || ''}
+            onChange={(e) => handleChange<Project>(index, { repositoryUrl: e.target.value })}
+            className={inputClass}
+            placeholder="https://github.com/owner/repo or owner/repo"
+          />
+          <p className="text-xs text-slate-500 mt-1">
+            Link a GitHub repo to display its README.md
+          </p>
+        </label>
+        <label className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-300 md:col-span-2">
+          External Project URL (optional)
+          <input
+            value={p.projectUrl || ''}
+            onChange={(e) => handleChange<Project>(index, { projectUrl: e.target.value })}
+            className={inputClass}
+            placeholder="https://yourproject.com or https://demo.site"
+          />
+          <p className="text-xs text-slate-500 mt-1">
+            Link to live product, demo, or external site
+          </p>
+        </label>
+        {(p.repositoryUrl || p.projectUrl) && (
+          <label className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-300 md:col-span-2">
+            Button Link Destination
+            <select
+              value={p.projectLinkType || 'repository'}
+              onChange={(e) => handleChange<Project>(index, { projectLinkType: e.target.value as 'repository' | 'external' })}
+              className={inputClass}
+            >
+              {p.repositoryUrl && <option value="repository">GitHub Repository</option>}
+              {p.projectUrl && <option value="external">External Project</option>}
+            </select>
+            <p className="text-xs text-slate-500 mt-1">
+              Choose where the "Repository" button links to
+            </p>
+          </label>
+        )}
+        {p.repositoryUrl && (
+          <div className="md:col-span-2">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">README Preview</p>
+            <MarkdownViewer
+              fetchMarkdown={() => fetchReadme(p.repositoryUrl!)}
+              fileName="README.md"
+            />
+          </div>
+        )}
           </div>
         )}
       </div>
@@ -1434,6 +1670,27 @@ const Admin: React.FC = () => {
           />
           Featured
         </label>
+        <label className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-300 md:col-span-2">
+          GitHub Repository URL (optional)
+          <input
+            value={r.repositoryUrl || ''}
+            onChange={(e) => handleChange<ResearchPost>(index, { repositoryUrl: e.target.value })}
+              className={inputClass}
+            placeholder="https://github.com/owner/repo or owner/repo"
+          />
+          <p className="text-xs text-slate-500 mt-1">
+            Link a GitHub repo to display its RESEARCH.md
+          </p>
+        </label>
+        {r.repositoryUrl && (
+          <div className="md:col-span-2">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">RESEARCH.md Preview</p>
+            <MarkdownViewer
+              fetchMarkdown={() => fetchResearchDoc(r.repositoryUrl!)}
+              fileName="RESEARCH.md"
+            />
+          </div>
+        )}
           </div>
         )}
       </div>
@@ -1511,6 +1768,10 @@ const Admin: React.FC = () => {
       return renderSiteConfigEditor();
     }
 
+    if (activeTab === 'legal') {
+      return renderLegalEditor();
+    }
+
     if (activeTab === 'heuristics') {
       return renderHeuristicsEditor();
     }
@@ -1531,7 +1792,7 @@ const Admin: React.FC = () => {
     if (activeTab === 'projects') {
       return (
         <div className="space-y-4">
-          {items.map((project, index) => renderProjectCard(project, index))}
+          {[...items].reverse().map((project, index) => renderProjectCard(project, items.length - 1 - index))}
         </div>
       );
     }
@@ -1539,14 +1800,14 @@ const Admin: React.FC = () => {
     if (activeTab === 'research') {
       return (
         <div className="space-y-4">
-          {items.map((post, index) => renderResearchCard(post, index))}
+          {[...items].reverse().map((post, index) => renderResearchCard(post, items.length - 1 - index))}
         </div>
       );
     }
 
     return (
       <div className="space-y-4">
-        {items.map((entry, index) => renderTimelineCard(entry, index))}
+        {[...items].reverse().map((entry, index) => renderTimelineCard(entry, items.length - 1 - index))}
       </div>
     );
   };
@@ -1572,7 +1833,7 @@ const Admin: React.FC = () => {
             {(Object.keys(tabLabels) as TabKey[]).map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => handleSetActiveTab(tab)}
                 className={`px-6 py-4 text-sm font-semibold transition-colors ${
                   activeTab === tab
                     ? 'text-primary border-b-2 border-primary bg-surface-light dark:bg-surface-dark'
@@ -1597,8 +1858,16 @@ const Admin: React.FC = () => {
                 )}
               </div>
               <div className="flex flex-wrap gap-2 text-sm">
-                {!['heuristics', 'manifesto', 'siteConfig'].includes(activeTab) && (
+                {!['heuristics', 'manifesto', 'siteConfig', 'legal'].includes(activeTab) && (
                   <button onClick={handleAddItem} className={btnPrimary}>Add Entry</button>
+                )}
+                {hasUnsavedChanges && (
+                  <button 
+                    onClick={handleDiscardChanges} 
+                    className={btnMuted}
+                  >
+                    Discard Changes
+                  </button>
                 )}
                 <button 
                   onClick={handleSave} 

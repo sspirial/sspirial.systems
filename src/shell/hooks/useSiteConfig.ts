@@ -98,11 +98,15 @@ const defaultSiteConfig: SiteConfig = {
         { label: 'LinkedIn', url: '#' },
       ],
       legal: [
-        { label: 'Privacy Policy', url: '#' },
-        { label: 'Terms of Service', url: '#' },
+        { label: 'Privacy Policy', url: '/privacy-policy' },
+        { label: 'Terms of Service', url: '/terms-of-service' },
         { label: 'System Status: Operational', url: '#' },
       ],
     },
+  },
+  legal: {
+    privacyPolicy: '',
+    termsOfService: '',
   },
 };
 
@@ -165,6 +169,10 @@ function normalizeSiteConfig(data?: any): SiteConfig {
           data.footer?.sections?.legal ||
           defaultSiteConfig.footer.sections.legal,
       },
+    },
+    legal: {
+      privacyPolicy: data.legal?.privacyPolicy || defaultSiteConfig.legal.privacyPolicy,
+      termsOfService: data.legal?.termsOfService || defaultSiteConfig.legal.termsOfService,
     },
   };
 }

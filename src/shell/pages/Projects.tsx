@@ -2,11 +2,16 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useProjects } from '@shell/hooks/useProjects';
 import { useSiteConfig } from '@shell/hooks/useSiteConfig';
+import { MarkdownViewer } from '@shell/components/MarkdownViewer';
+import { ProjectCard } from '@shell/components/ProjectCard';
+import { fetchReadme } from '@shell/services/github-impl';
+import { Project } from '@core/types';
 
 const Projects: React.FC = () => {
   const { projects, loading } = useProjects();
   const { config } = useSiteConfig();
   const [filter, setFilter] = useState('All');
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const filters = ['All', 'Prototypes', 'Tools', 'Experiments', 'Architecture'];
 
   if (loading) {
@@ -62,37 +67,38 @@ const Projects: React.FC = () => {
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredProjects.map((project) => (
-            <article key={project.id} className="group flex flex-col overflow-hidden rounded-xl border border-[#e5e7eb] dark:border-white/10 bg-white dark:bg-surface-dark transition-all hover:border-primary hover:shadow-lg dark:hover:border-primary">
-              <div className="relative h-56 w-full overflow-hidden">
-                <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: `url('${project.image}')` }}></div>
-                {project.version && (
-                  <div className="absolute right-3 top-3 rounded-full bg-white/90 px-2 py-1 text-xs font-bold uppercase tracking-wider text-slate-800 backdrop-blur-sm">{project.version}</div>
-                )}
-                {project.status === 'Archived' && <div className="absolute inset-0 bg-slate-900/10 dark:bg-black/40"></div>}
-              </div>
-              <div className="flex flex-1 flex-col p-5">
-                <div className="mb-3 flex items-center gap-2">
-                  <span className={`flex h-2 w-2 rounded-full ${project.color}`}></span>
-                  <span className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">{project.type} • {project.status}</span>
-                </div>
-                <h3 className="mb-2 text-xl font-bold leading-tight tracking-tight text-slate-900 dark:text-white">{project.title}</h3>
-                <p className="mb-4 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">{project.description}</p>
-                <div className="mt-auto flex items-end justify-between border-t border-slate-100 dark:border-white/10 pt-4">
-                  <div className="flex flex-wrap gap-1">
-                    {project.tags.map(tag => (
-                      <span key={tag} className="rounded bg-slate-100 dark:bg-white/5 px-2 py-1 text-[10px] font-semibold text-slate-600 dark:text-slate-400">{tag}</span>
-                    ))}
-                  </div>
-                  <a className="group/btn flex items-center gap-1 text-sm font-bold text-primary hover:text-primary/80 dark:hover:text-primary/80" href="#">
-                    Log
-                    <span className="material-symbols-outlined text-[16px] transition-transform group-hover/btn:translate-x-1">arrow_forward</span>
-                  </a>
-                </div>
-              </div>
-            </article>
+            <ProjectCard
+              key={project.id}
+              project={project}
+              onReadmeClick={() => project.repositoryUrl && setSelectedProject(project)}
+            />
           ))}
         </div>
       </section>
+
+      {selectedProject && selectedProject.repositoryUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-surface-dark rounded-xl max-w-3xl w-full max-h-[80vh] overflow-auto shadow-xl border border-gray-200 dark:border-white/10">
+            <div className="sticky top-0 bg-white dark:bg-surface-dark border-b border-gray-200 dark:border-white/10 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                {selectedProject.title} · README.md
+              </h2>
+              <button
+                onClick={() => setSelectedProject(null)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded transition-colors"
+              >
+                <span className="material-symbols-outlined text-slate-600 dark:text-slate-300">close</span>
+              </button>
+            </div>
+            <div className="p-6">
+              <MarkdownViewer
+                fetchMarkdown={() => fetchReadme(selectedProject.repositoryUrl!)}
+                fileName="README.md"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <section className="mx-auto mt-8 max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-center rounded-2xl bg-slate-900 dark:bg-surface-dark border border-white/10 px-6 py-16 text-center shadow-inner">
