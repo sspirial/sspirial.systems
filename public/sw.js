@@ -37,6 +37,15 @@ self.addEventListener('fetch', (event) => {
   // Skip cross-origin requests
   if (!event.request.url.startsWith(self.location.origin)) return;
 
+  // Don't cache module scripts - let them load directly
+  const isModuleScript = event.request.destination === 'script' && 
+                         event.request.mode === 'cors';
+  if (isModuleScript) {
+    // Let module scripts bypass cache entirely
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   // Use stale-while-revalidate strategy for better perceived performance
   event.respondWith(
     caches.open(RUNTIME_CACHE).then((cache) => {
