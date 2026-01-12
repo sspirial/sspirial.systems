@@ -16,11 +16,15 @@ const Research: React.FC = () => {
     if (p.featured) return false;
 
     if (activeTab !== 'All Posts') {
-      const normalizedTab = activeTab.toUpperCase().replace(/S$/, '');
-      if (!p.category.includes(normalizedTab) && !p.category.includes(activeTab.toUpperCase())) {
-        if (activeTab === 'Research' && p.category !== 'RESEARCH') return false;
-        if (activeTab === 'Dev Logs' && p.category !== 'DEV LOG') return false;
-        if (activeTab === 'Whitepapers' && p.category !== 'WHITEPAPER') return false;
+      const categoryMap: Record<string, string> = {
+        'Dev Logs': 'DEV LOG',
+        'Whitepapers': 'WHITEPAPER',
+        'Insights': 'INSIGHT',
+        'Tutorials': 'TUTORIAL'
+      };
+      const targetCategory = categoryMap[activeTab];
+      if (targetCategory && p.category !== targetCategory) {
+        return false;
       }
     }
 

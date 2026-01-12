@@ -3,6 +3,16 @@ import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { toHaveNoViolations } from 'jest-axe';
 
+// Extend vitest with jest-axe matchers
+declare module 'vitest' {
+  interface Assertion {
+    toHaveNoViolations(): any;
+  }
+  interface AsymmetricMatchersContaining {
+    toHaveNoViolations(): any;
+  }
+}
+
 // Cleanup after each test
 afterEach(() => {
   cleanup();

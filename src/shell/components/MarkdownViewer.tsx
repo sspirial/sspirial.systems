@@ -43,8 +43,8 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   showLoading = true
 }) => {
   const [content, setContent] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -56,7 +56,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
       if (result.ok) {
         setContent(result.value);
       } else {
-        setError(result.error);
+        setError(typeof (result as { ok: false; error: string | unknown }).error === 'string' ? (result as { ok: false; error: string | unknown }).error as string : String((result as { ok: false; error: unknown }).error));
       }
       setLoading(false);
     };
