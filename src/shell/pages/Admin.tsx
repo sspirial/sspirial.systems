@@ -13,6 +13,7 @@ import { createEmptyManifesto } from '@core/models';
 import { useSiteConfig } from '@shell/hooks/useSiteConfig';
 import { MarkdownViewer } from '@shell/components/MarkdownViewer';
 import { fetchReadme, fetchResearchDoc } from '@shell/services/github-impl';
+import { isServiceWorkerActive } from '@shell/utils/serviceWorkerManager';
 
 type TabKey = 'projects' | 'research' | 'timeline' | 'heuristics' | 'manifesto' | 'siteConfig' | 'legal';
 type EditableItem = (Project | ResearchPost | TimelineItem) & { __key?: string };
@@ -126,6 +127,7 @@ const Admin: React.FC = () => {
   const { logout } = useAuth();
   const [activeTab, setActiveTabState] = useState<TabKey>('projects');
   const [pendingTab, setPendingTab] = useState<TabKey | null>(null);
+  const [offlineEnabled, setOfflineEnabled] = useState(false);
   
   // Use the woven hooks from Shell
   const projectsHook = useProjects();
@@ -206,6 +208,18 @@ const Admin: React.FC = () => {
       setSiteConfig(siteConfigHook.config);
     }
   }, [activeTab, projectsHook.projects, researchHook.posts, timelineHook.timeline, heuristicsHook.heuristics, manifestoHook.manifesto, siteConfigHook.config, hasUnsavedChanges]);
+  
+  // Check service worker status periodically
+  useEffect(() => {
+    const checkOfflineStatus = () => {
+      setOfflineEnabled(isServiceWorkerActive());
+    };
+    
+    checkOfflineStatus();
+    const interval = setInterval(checkOfflineStatus, 2000); // Check every 2 seconds
+    
+    return () => clearInterval(interval);
+  }, []);
   
   const loading = projectsHook.loading || researchHook.loading || timelineHook.loading || heuristicsHook.loading || manifestoHook.loading || siteConfigHook.loading;
 
@@ -1817,7 +1831,15 @@ const Admin: React.FC = () => {
       <div className="max-w-6xl mx-auto">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-amber-400">Systems Operational</p>
+            <div className="flex items-center gap-3 mb-1">
+              <p className="text-xs uppercase tracking-[0.2em] text-amber-400">Systems Operational</p>
+              {offlineEnabled && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span className="text-[10px] font-mono font-medium text-emerald-400 uppercase tracking-wider">Offline Mode Active</span>
+                </div>
+              )}
+            </div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">System Admin</h1>
           </div>
           <div className="flex gap-3 text-sm">

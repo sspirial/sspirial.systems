@@ -1,6 +1,7 @@
-// Service Worker for caching and offline support
-const CACHE_NAME = 'sspirial-systems-v2';
-const RUNTIME_CACHE = 'sspirial-runtime-v2';
+// Service Worker for authenticated offline support
+// Only active when user is logged in
+const CACHE_NAME = 'sspirial-systems-v3';
+const RUNTIME_CACHE = 'sspirial-runtime-v3';
 
 const PRECACHE_URLS = [
   '/',
@@ -68,4 +69,11 @@ self.addEventListener('fetch', (event) => {
       });
     })
   );
+});
+
+// Message handler for communication with the app
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

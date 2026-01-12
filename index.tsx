@@ -32,13 +32,6 @@ if (typeof window !== 'undefined') {
     window.addEventListener('load', loadFonts);
   }
   
-  // Register service worker for caching
-  if ('serviceWorker' in navigator && import.meta.env.PROD) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
-        .catch(() => {
-          // Silently fail if service worker registration fails
-        });
-    });
-  }
+  // Service worker registration is now handled by AuthContext
+  // It will only be registered when a user is authenticated
 }
