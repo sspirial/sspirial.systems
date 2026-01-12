@@ -98,11 +98,80 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   return (
     <div
       className={`rounded-lg border border-gray-200 dark:border-white/10 bg-white/40 dark:bg-white/5 p-6 overflow-auto markdown-content ${className}`}
+      role="article"
+      aria-label={fileName}
     >
+      {/* Helper functions for media detection */}
+      {(() => {
+        const isYouTubeUrl = (url?: string) =>
+          !!url && (/youtu\.be\//.test(url) || /youtube\.com\/watch\?v=/.test(url) || /youtube\.com\/shorts\//.test(url));
+        const getYouTubeEmbed = (url?: string) => {
+          if (!url) return null;
+          const idMatch =
+            url.match(/youtu\.be\/([\w-]+)/) ||
+            url.match(/v=([\w-]+)/) ||
+            url.match(/shorts\/([\w-]+)/);
+          const id = idMatch?.[1];
+          return id ? `https://www.youtube.com/embed/${id}` : null;
+        };
+        const isVimeoUrl = (url?: string) => !!url && /vimeo\.com\/(\d+)/.test(url);
+        const getVimeoEmbed = (url?: string) => {
+          if (!url) return null;
+          const m = url.match(/vimeo\.com\/(\d+)/);
+          return m ? `https://player.vimeo.com/video/${m[1]}` : null;
+        };
+        const isAudioUrl = (url?: string) => !!url && /\.(mp3|wav|ogg|m4a)(\?.*)?$/i.test(url);
+        const isVideoUrl = (url?: string) => !!url && /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url);
+
+        // Expose on window for components closure without redefinition per render
+        (globalThis as any).__md_isYouTubeUrl = isYouTubeUrl;
+        (globalThis as any).__md_getYouTubeEmbed = getYouTubeEmbed;
+        (globalThis as any).__md_isVimeoUrl = isVimeoUrl;
+        (globalThis as any).__md_getVimeoEmbed = getVimeoEmbed;
+        (globalThis as any).__md_isAudioUrl = isAudioUrl;
+        (globalThis as any).__md_isVideoUrl = isVideoUrl;
+        return null;
+      })()}
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeRaw, rehypeKatex, [rehypeHighlight, { detect: true }]]}
         components={{
+          iframe: ({ src, title, allow, allowFullScreen }) => {
+            const safeSrc = typeof src === 'string' ? src : undefined;
+            return (
+              <div className="my-4 overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
+                <div className="w-full aspect-video">
+                  <iframe
+                    src={safeSrc}
+                    title={title || 'Embedded media'}
+                    className="w-full h-full"
+                    allow={typeof allow === 'string' ? allow : 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'}
+                    allowFullScreen={!!allowFullScreen || true}
+                  />
+                </div>
+              </div>
+            );
+          },
+          video: ({ src, children, controls }) => {
+            const safeSrc = typeof src === 'string' ? src : undefined;
+            return (
+              <div className="my-4 overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
+                <video src={safeSrc} className="w-full" controls={controls ?? true}>
+                  {children}
+                </video>
+              </div>
+            );
+          },
+          audio: ({ src, children, controls }) => {
+            const safeSrc = typeof src === 'string' ? src : undefined;
+            return (
+              <div className="my-4 rounded-lg border border-slate-200 dark:border-white/10 p-3 bg-white/60 dark:bg-white/5">
+                <audio src={safeSrc} className="w-full" controls={controls ?? true}>
+                  {children}
+                </audio>
+              </div>
+            );
+          },
           h1: ({ children }) => (
             <h1 className="text-3xl font-bold mt-6 mb-3 text-slate-900 dark:text-white">
               {children}
@@ -138,16 +207,73 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
               {children}
             </p>
           ),
-          a: ({ href, children }) => (
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline font-medium"
-            >
-              {children}
-            </a>
-          ),
+          a: ({ href, children }) => {
+            const url = typeof href === 'string' ? href : undefined;
+            const childText = Array.isArray(children) ? children.map((c: any) => (typeof c === 'string' ? c : '')).join('').trim() : '';
+
+            const yt = (globalThis as any).__md_isYouTubeUrl?.(url) ? (globalThis as any).__md_getYouTubeEmbed?.(url) : null;
+            const vm = (globalThis as any).__md_isVimeoUrl?.(url) ? (globalThis as any).__md_getVimeoEmbed?.(url) : null;
+
+            // Auto-embed when the link text is the URL itself
+            if (url && childText === url) {
+              if (yt) {
+                return (
+                  <div className="my-4 overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
+                    <div className="w-full aspect-video">
+                      <iframe
+                        src={yt}
+                        title="YouTube video"
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                      />
+                    </div>
+                  </div>
+                );
+              }
+              if (vm) {
+                return (
+                  <div className="my-4 overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
+                    <div className="w-full aspect-video">
+                      <iframe
+                        src={vm}
+                        title="Vimeo video"
+                        className="w-full h-full"
+                        allow="autoplay; fullscreen; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  </div>
+                );
+              }
+              if ((globalThis as any).__md_isVideoUrl?.(url)) {
+                return (
+                  <div className="my-4 overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
+                    <video src={url} className="w-full" controls />
+                  </div>
+                );
+              }
+              if ((globalThis as any).__md_isAudioUrl?.(url)) {
+                return (
+                  <div className="my-4 rounded-lg border border-slate-200 dark:border-white/10 p-3 bg-white/60 dark:bg-white/5">
+                    <audio src={url} className="w-full" controls />
+                  </div>
+                );
+              }
+            }
+
+            return (
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline font-medium"
+                aria-label={typeof children === 'string' ? children : undefined}
+              >
+                {children}
+              </a>
+            );
+          },
           code: ({ node, inline, children, ...props }: any) => {
             if (inline) {
               return (

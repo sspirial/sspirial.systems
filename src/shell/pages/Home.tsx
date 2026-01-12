@@ -1,16 +1,14 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useProjects } from '@shell/hooks/useContent';
 import { useSiteConfig } from '@shell/hooks/useSiteConfig';
 import { ProjectCard } from '@shell/components/ProjectCard';
-import { MarkdownViewer } from '@shell/components/MarkdownViewer';
-import { fetchReadme } from '@shell/services/github-impl';
-import { Project } from '@core/types';
+ 
 
 const Home: React.FC = () => {
   const { data: projects } = useProjects();
   const { config } = useSiteConfig();
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const navigate = useNavigate();
   
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden">
@@ -96,35 +94,12 @@ const Home: React.FC = () => {
                 <ProjectCard
                   key={project.id}
                   project={project}
-                  onReadmeClick={() => project.repositoryUrl && setSelectedProject(project)}
+                  onReadmeClick={() => navigate(`/projects/${project.id}`)}
                 />
               ))}
             </div>
           </section>
 
-          {selectedProject && selectedProject.repositoryUrl && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4">
-              <div className="bg-white dark:bg-surface-dark rounded-xl max-w-3xl w-full max-h-[80vh] overflow-auto shadow-xl border border-gray-200 dark:border-white/10">
-                <div className="sticky top-0 bg-white dark:bg-surface-dark border-b border-gray-200 dark:border-white/10 px-6 py-4 flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                    {selectedProject.title} · README.md
-                  </h2>
-                  <button
-                    onClick={() => setSelectedProject(null)}
-                    className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-slate-600 dark:text-slate-300">close</span>
-                  </button>
-                </div>
-                <div className="p-6">
-                  <MarkdownViewer
-                    fetchMarkdown={() => fetchReadme(selectedProject.repositoryUrl!)}
-                    fileName="README.md"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
 
           <section className="py-16 lg:py-24 border-t border-[#e5e7eb] dark:border-white/10">
             <div className="flex flex-col gap-12">

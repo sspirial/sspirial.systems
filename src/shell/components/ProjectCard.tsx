@@ -12,9 +12,7 @@ interface ProjectCardProps {
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onReadmeClick }) => {
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Only trigger readme on actual card area, not on links
-    if ((e.target as HTMLElement).closest('a')) return;
+  const activateCard = () => {
     if (project.repositoryUrl) {
       onReadmeClick?.();
     }
@@ -39,12 +37,26 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onReadmeClick
   return (
     <article
       className="group flex flex-col overflow-hidden rounded-xl border border-[#e5e7eb] dark:border-white/10 bg-white dark:bg-surface-dark transition-all hover:border-primary hover:shadow-lg dark:hover:border-primary cursor-pointer"
-      onClick={handleCardClick}
+      role={project.repositoryUrl ? 'button' : undefined}
+      tabIndex={project.repositoryUrl ? 0 : undefined}
+      aria-label={`${project.title} – ${project.description}`}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest('a')) return;
+        activateCard();
+      }}
+      onKeyDown={(e) => {
+        if ((e.target as HTMLElement).closest('a')) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          activateCard();
+        }
+      }}
     >
       <div className="relative h-56 w-full overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
           style={{ backgroundImage: `url('${project.image}')` }}
+          aria-hidden="true"
         ></div>
         {project.version && (
           <div className="absolute right-3 top-3 rounded-full bg-white/90 px-2 py-1 text-xs font-bold uppercase tracking-wider text-slate-800 backdrop-blur-sm">

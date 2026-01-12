@@ -15,3 +15,31 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
+/* Accessible focus outlines for keyboard navigation */
+:focus-visible {
+    outline: 2px solid #6C9BF2; /* matches primary */
+    outline-offset: 2px;
+}
+
+/* Skip link styles: only visible on focus */
+.skip-link {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    transform: translateY(-200%);
+    background: #ffffff;
+    color: #111318;
+    padding: 8px 12px;
+    border: 2px solid transparent; /* avoid visible edge when hidden */
+    border-radius: 6px;
+    z-index: 1000;
+}
+.dark .skip-link {
+    background: #0b1220;
+    color: #ffffff;
+}
+.skip-link:focus {
+    transform: translateY(0%);
+    border-color: #6C9BF2;
+}

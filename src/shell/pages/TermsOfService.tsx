@@ -14,7 +14,7 @@ const TermsOfService: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark">
-      <div className="max-w-4xl mx-auto px-6 lg:px-12 py-16">
+      <div className="max-w-5xl mx-auto px-6 lg:px-12 py-16">
         <button
           onClick={() => navigate('/')}
           className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors mb-8"
