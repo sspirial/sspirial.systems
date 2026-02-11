@@ -87,6 +87,13 @@ export class FirebaseDatabase implements DatabaseService {
       },
       error => {
         console.error(`Error listening to ${collectionName}:`, error);
+        // Propagate an empty list to callers so hooks relying on this
+        // listener won't remain stuck in a loading state.
+        try {
+          callback([] as unknown as T[]);
+        } catch (err) {
+          // swallow errors from callback to avoid unhandled exceptions
+        }
       }
     );
     return unsubscribe;
@@ -104,6 +111,12 @@ export class FirebaseDatabase implements DatabaseService {
       },
       error => {
         console.error(`Error listening to ${collectionName}/${documentId}:`, error);
+        // Propagate null so callers can fall back to defaults and stop loading.
+        try {
+          callback(null);
+        } catch (err) {
+          // swallow errors from callback
+        }
       }
     );
     return unsubscribe;
