@@ -1,26 +1,54 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useResearchPosts } from '@shell/hooks/useResearchPosts';
 import { useSiteConfig } from '@shell/hooks/useSiteConfig';
+import { MarkdownViewer } from '@shell/components/MarkdownViewer';
+import { fetchResearchDoc } from '@shell/services/github-impl';
 
 const Research: React.FC = () => {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { posts, loading } = useResearchPosts();
   const { config } = useSiteConfig();
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [activeTab, setActiveTab] = React.useState('All Posts');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('All');
+  const [activePostId, setActivePostId] = useState<string | null>(null);
 
-  const featured = posts.find(p => p.featured);
+  // Sync activePostId with URL parameter
+  useEffect(() => {
+    if (!loading && posts.length > 0) {
+      if (id) {
+        setActivePostId(id);
+      } else {
+        // Fallback to featured post or first post
+        const featured = posts.find(p => p.featured);
+        if (featured) {
+          setActivePostId(featured.id);
+        } else if (posts[0]) {
+          setActivePostId(posts[0].id);
+        }
+      }
+    }
+  }, [id, posts, loading]);
 
-  const others = posts.filter(p => {
-    if (p.featured) return false;
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] bg-background-light dark:bg-background-dark">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs font-mono text-gray-500 dark:text-zinc-500 uppercase tracking-widest">Opening knowledge database...</p>
+        </div>
+      </div>
+    );
+  }
 
-    if (activeTab !== 'All Posts') {
+  // Filter posts based on category and search query
+  const filteredPosts = posts.filter(p => {
+    if (activeTab !== 'All') {
       const categoryMap: Record<string, string> = {
+        'Research': 'RESEARCH',
         'Dev Logs': 'DEV LOG',
         'Whitepapers': 'WHITEPAPER',
-        'Insights': 'INSIGHT',
-        'Tutorials': 'TUTORIAL'
       };
       const targetCategory = categoryMap[activeTab];
       if (targetCategory && p.category !== targetCategory) {
@@ -40,137 +68,201 @@ const Research: React.FC = () => {
     return true;
   });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const activePost = posts.find(p => p.id === activePostId);
+
+  const handlePostSelect = (postId: string) => {
+    setActivePostId(postId);
+    navigate(`/research/${postId}`);
+  };
 
   return (
-    <main className="flex-grow w-full max-w-7xl mx-auto px-4 md:px-10 py-8">
-      <div className="flex flex-wrap gap-2 items-center mb-6">
-        <Link to="/" className="text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-white text-sm font-medium leading-normal transition-colors">Home</Link>
-        <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
-        <span className="text-slate-900 dark:text-white text-sm font-medium leading-normal">Knowledge Hub</span>
-      </div>
+    <div className="min-h-screen bg-background-light dark:bg-background-dark cyber-grid transition-colors duration-300 flex flex-col">
+      
+      {/* Decorative background glows */}
+      <div className="glow-spot w-[300px] h-[300px] bg-primary/10 top-24 left-10 dark:bg-primary/5" />
+      <div className="glow-spot w-[300px] h-[300px] bg-accent/10 bottom-24 right-10 dark:bg-accent/5" />
 
-      <div className="flex flex-col md:flex-row justify-between gap-6 mb-12">
-        <div className="flex max-w-2xl flex-col gap-3">
-          <h1 className="text-slate-900 dark:text-white text-4xl md:text-5xl font-black leading-tight tracking-[-0.033em]">{config.research.heading}</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-lg font-normal leading-relaxed">
+      {/* Breadcrumbs & Header */}
+      <div className="max-w-[1200px] w-full mx-auto px-6 lg:px-12 pt-6 pb-4 relative z-10 text-left">
+        <div className="flex flex-wrap gap-2 items-center mb-4 font-mono text-[10px] tracking-wider">
+          <Link to="/" className="text-slate-500 hover:text-primary transition-colors">sspirial@systems</Link>
+          <span className="text-slate-400">/</span>
+          <span className="text-slate-900 dark:text-white font-bold">knowledge_hub</span>
+        </div>
+        <div className="flex flex-col gap-2 border-b border-gray-200 dark:border-white/10 pb-6">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            {config.research.heading}
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-gray-400 max-w-2xl font-body">
             {config.research.subtitle}
           </p>
         </div>
       </div>
 
-      {featured && !searchQuery && activeTab === 'All Posts' && (
-        <section className="mb-16">
-          <div className="group relative overflow-hidden rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-white/10 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-300">
-            <div className="flex flex-col md:flex-row h-full">
-              <div className="flex-1 p-8 md:p-10 flex flex-col justify-between order-2 md:order-1">
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary font-mono uppercase tracking-wide">
-                      {featured.category}
-                    </span>
-                    <span className="text-slate-400 text-xs font-mono">{featured.readTime}</span>
-                  </div>
-                  <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors duration-300">
-                    {featured.title}
-                  </h3>
-                  <p className="text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-3">
-                    {featured.excerpt}
-                  </p>
-                </div>
-                <div className="mt-8">
-                  <a className="inline-flex items-center gap-2 text-primary font-bold text-sm hover:gap-3 transition-all" href="#">
-                    Read Full Report <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                  </a>
-                </div>
-              </div>
-              <div className="md:w-2/5 h-64 md:h-auto order-1 md:order-2 relative bg-gray-100 dark:bg-gray-800">
-                <img alt="Research thumbnail" className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-700 ease-out" src={featured.imageUrl} />
-                <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-l from-white dark:from-surface-dark to-transparent"></div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      <div className="sticky top-[72px] z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm py-4 mb-8 -mx-4 px-4 md:-mx-10 md:px-10 border-b border-gray-200/50 dark:border-white/10">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex overflow-x-auto pb-1 md:pb-0 no-scrollbar gap-6 md:gap-8 min-w-0 border-b md:border-b-0 border-gray-200 dark:border-white/10">
-            <button
-              onClick={() => setActiveTab('All Posts')}
-              className={`whitespace-nowrap flex flex-col items-center justify-center border-b-2 pb-2 transition-colors ${activeTab === 'All Posts' ? 'border-primary text-primary' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
-            >
-              <p className="text-sm font-bold leading-normal tracking-[0.015em]">All Posts</p>
-            </button>
-            {['Research', 'Dev Logs', 'Whitepapers'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`whitespace-nowrap flex flex-col items-center justify-center border-b-2 pb-2 transition-colors ${activeTab === tab ? 'border-primary text-primary' : 'border-transparent hover:border-gray-300 dark:hover:border-white/20 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
-              >
-                <p className="text-sm font-bold leading-normal tracking-[0.015em]">{tab}</p>
-              </button>
-            ))}
-          </div>
-          <div className="w-full md:w-auto md:min-w-[320px]">
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="material-symbols-outlined text-slate-400 group-focus-within:text-primary transition-colors">search</span>
-              </div>
+      {/* Main split dashboard section */}
+      <div className="max-w-[1200px] w-full mx-auto px-6 lg:px-12 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 pb-16 relative z-10 text-left">
+        
+        {/* Left column (4 cols): File Tree / Sidebar Directory */}
+        <aside className="lg:col-span-4 flex flex-col gap-4">
+          
+          {/* Controls: Category tabs & Search bar */}
+          <div className="flex flex-col gap-3 p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-white/40 dark:bg-zinc-900/50 backdrop-blur shadow-sm">
+            
+            {/* Search Input */}
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-2.5 top-2 text-gray-400 dark:text-zinc-600 text-[18px]">search</span>
               <input
-                className="block w-full rounded-lg border-0 py-2.5 pl-10 pr-4 text-slate-900 ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 bg-white dark:bg-surface-dark dark:ring-white/10 dark:text-white dark:placeholder:text-gray-500 transition-shadow shadow-sm"
-                placeholder="Search documentation..."
                 type="text"
+                placeholder="Query documentation index..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-8 pl-8 pr-4 rounded border border-gray-200 dark:border-white/5 bg-white/40 dark:bg-zinc-950/60 text-[11px] font-mono placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-slate-900 dark:text-white"
               />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-2 text-gray-400 dark:text-zinc-500 hover:text-primary">
+                  <span className="material-symbols-outlined text-[14px]">close</span>
+                </button>
+              )}
             </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {others.map((post) => (
-          <article key={post.id} className="flex flex-col bg-white dark:bg-surface-dark rounded-xl p-6 border border-gray-200 dark:border-white/10 hover:border-primary/40 dark:hover:border-primary/40 transition-all hover:shadow-lg hover:shadow-gray-100 dark:hover:shadow-none group h-full cursor-pointer" onClick={() => navigate(`/research/${post.id}`)}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-mono text-primary bg-primary/10 px-2 py-1 rounded">{post.category}</span>
-              <div className="flex items-center gap-2">
-                {post.repositoryUrl && (
-                  <span className="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors text-sm" title="Has linked repository">link</span>
-                )}
-                <span className="text-xs font-mono text-slate-400">{post.date}</span>
-              </div>
+            {/* Tabs */}
+            <div className="flex gap-1 border-b border-gray-100 dark:border-white/5 pb-1">
+              {['All', 'Research', 'Dev Logs', 'Whitepapers'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-2.5 py-1 text-[9px] font-mono rounded tracking-wider transition-all ${activeTab === tab
+                    ? 'bg-primary/15 border border-primary/30 text-primary font-bold'
+                    : 'text-gray-500 hover:text-primary border border-transparent'
+                  }`}
+                >
+                  {tab.toUpperCase()}
+                </button>
+              ))}
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 leading-tight group-hover:text-primary transition-colors">
-              {post.title}
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6 flex-grow">
-              {post.excerpt}
-            </p>
-            <div className="mt-auto pt-4 border-t border-gray-100 dark:border-white/10 flex items-center justify-between">
-              <div className="flex gap-2">
-                {post.tags.map(tag => (
-                  <span key={tag} className="text-[10px] font-semibold text-slate-400 bg-gray-100 dark:bg-white/5 px-1.5 py-0.5 rounded">{tag}</span>
-                ))}
-              </div>
-              <span className="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors text-xl">arrow_outward</span>
-            </div>
-          </article>
-        ))}
-        {others.length === 0 && (
-          <div className="col-span-full py-12 text-center text-slate-500 dark:text-slate-400">
-            <span className="material-symbols-outlined text-4xl mb-2">search_off</span>
-            <p>No research found matching your criteria.</p>
+
           </div>
-        )}
+
+          {/* Directory File Tree List */}
+          <div className="flex-1 overflow-y-auto max-h-[500px] lg:max-h-[640px] pr-1 flex flex-col gap-2.5">
+            {filteredPosts.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-gray-300 dark:border-white/10 p-6 text-center">
+                <span className="material-symbols-outlined text-3xl text-gray-400 dark:text-zinc-600 mb-1">find_in_page</span>
+                <p className="font-mono text-[10px] text-gray-500 dark:text-zinc-500">NO INDEX MATCHES FOUND</p>
+              </div>
+            ) : (
+              filteredPosts.map((post) => (
+                <div
+                  key={post.id}
+                  onClick={() => handlePostSelect(post.id)}
+                  className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-2 relative overflow-hidden select-none text-left ${activePostId === post.id
+                    ? 'border-primary bg-primary/[0.03] dark:bg-primary/[0.01] shadow-md shadow-primary/5'
+                    : 'border-gray-200 dark:border-white/5 bg-white/40 dark:bg-zinc-900/40 hover:border-primary/30 hover:bg-white/60 dark:hover:bg-zinc-900/60'
+                  }`}
+                >
+                  {/* Selected Indicator Light */}
+                  {activePostId === post.id && (
+                    <div className="absolute top-0 left-0 w-[3px] h-full bg-primary" />
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${
+                      post.category === 'WHITEPAPER' ? 'bg-primary/10 text-primary' :
+                      post.category === 'DEV LOG' ? 'bg-accent/10 text-accent dark:text-purple-400' :
+                      'bg-emerald-100 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400'
+                    }`}>
+                      {post.category}
+                    </span>
+                    <span className="font-mono text-[9px] text-gray-400 dark:text-zinc-500">{post.date}</span>
+                  </div>
+
+                  <h3 className={`text-sm font-bold leading-tight tracking-tight transition-colors ${activePostId === post.id ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>
+                    {post.title}
+                  </h3>
+                  
+                  <p className="text-[11px] text-slate-500 dark:text-gray-400 leading-normal line-clamp-2 font-body">
+                    {post.excerpt}
+                  </p>
+
+                  <div className="flex items-center justify-between mt-1 pt-2 border-t border-dashed border-gray-100 dark:border-white/5">
+                    <span className="font-mono text-[9px] text-gray-400 dark:text-zinc-500">{post.readTime}</span>
+                    <span className="material-symbols-outlined text-[16px] text-gray-300 dark:text-zinc-700 group-hover:text-primary">arrow_right</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+        </aside>
+
+        {/* Right column (8 cols): Document Detail Panel */}
+        <section className="lg:col-span-8">
+          
+          {activePost ? (
+            <div className="rounded-xl border border-gray-200 dark:border-white/5 bg-white/40 dark:bg-zinc-900/30 p-6 sm:p-8 flex flex-col gap-6 shadow-xl relative overflow-hidden min-h-[500px]">
+              
+              {/* Document Header */}
+              <header className="flex flex-col gap-4 border-b border-gray-200 dark:border-white/5 pb-6 text-left">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center rounded bg-primary/15 border border-primary/25 px-2.5 py-0.5 text-[9px] font-mono font-bold text-primary uppercase tracking-wide">
+                    {activePost.category}
+                  </span>
+                  <span className="font-mono text-[10px] text-gray-400 dark:text-zinc-500">{activePost.date}</span>
+                  <span className="text-gray-400 select-none">·</span>
+                  <span className="font-mono text-[10px] text-gray-400 dark:text-zinc-500">{activePost.readTime}</span>
+                </div>
+                
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{activePost.title}</h1>
+                <p className="text-sm sm:text-base text-slate-600 dark:text-gray-400 font-body leading-relaxed">{activePost.excerpt}</p>
+                
+                {activePost.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-2">
+                    {activePost.tags.map(tag => (
+                      <span key={tag} className="text-[9px] font-mono text-slate-500 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-850 px-2 py-0.5 rounded border border-gray-200 dark:border-white/5">
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </header>
+
+              {/* Document Main Image */}
+              {activePost.imageUrl && (
+                <div className="w-full h-56 rounded-lg overflow-hidden border border-gray-200 dark:border-white/5 relative bg-[#111318]">
+                  <img src={activePost.imageUrl} alt={activePost.title} className="w-full h-full object-cover filter grayscale contrast-125 dark:opacity-85" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+                </div>
+              )}
+
+              {/* Markdown Content */}
+              {activePost.repositoryUrl ? (
+                <article className="prose prose-invert max-w-none">
+                  <MarkdownViewer
+                    fetchMarkdown={() => fetchResearchDoc(activePost.repositoryUrl!)}
+                    fileName="RESEARCH.md"
+                    className="border-none bg-transparent p-0 rounded-none"
+                  />
+                </article>
+              ) : (
+                <div className="text-center py-16 bg-gray-50/50 dark:bg-white/5 rounded-xl border border-dashed border-gray-200 dark:border-white/5 p-6">
+                  <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-600 mb-2">description</span>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm font-mono">NO RESEARCH ATTACHMENTS FOR THIS NODE</p>
+                </div>
+              )}
+
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-gray-300 dark:border-white/10 p-16 text-center min-h-[500px] flex flex-col items-center justify-center">
+              <span className="material-symbols-outlined text-5xl text-gray-400 dark:text-zinc-600 mb-3 animate-pulse">terminal</span>
+              <p className="font-mono text-xs text-gray-500 dark:text-zinc-500">AWAITING_NODE_SELECTION.sys</p>
+              <p className="text-xs text-gray-400 dark:text-zinc-600 font-body max-w-xs mt-1">Select an active research node index from the left sidebar registry directory to mount documentation.</p>
+            </div>
+          )}
+
+        </section>
+
       </div>
-    </main>
+    </div>
   );
 };
 

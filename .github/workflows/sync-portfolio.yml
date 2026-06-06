@@ -1,0 +1,31 @@
+name: Automatic Portfolio Sync
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+
+jobs:
+  sync:
+    name: Sync GitHub Repositories to InstantDB
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - name: Run GitHub Sync Script
+        env:
+          VITE_INSTANT_APP_ID: ${{ secrets.VITE_INSTANT_APP_ID }}
+          INSTANT_APP_ADMIN_TOKEN: ${{ secrets.INSTANT_APP_ADMIN_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACCOUNT: ${{ secrets.GITHUB_ACCOUNT || 'sspirial' }}
+        run: |
+          node scripts/sync-github.js

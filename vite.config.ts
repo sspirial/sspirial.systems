@@ -56,7 +56,7 @@ export default defineConfig(({ mode }) => {
           output: {
             manualChunks: {
               'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-              'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+              'instantdb': ['@instantdb/react'],
               'markdown': ['react-markdown', 'rehype-highlight', 'rehype-katex', 'rehype-raw', 'remark-gfm', 'remark-math'],
             },
             chunkFileNames: 'assets/[name]-[hash].js',

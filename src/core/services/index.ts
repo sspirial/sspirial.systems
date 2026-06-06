@@ -60,14 +60,14 @@ export interface AuthService {
   getCurrentUser(): Promise<{ uid: string; email: string } | null>;
 
   /**
-   * Sign in with email and password
+   * Send a magic code to the user's email
    */
-  signIn(email: string, password: string): Promise<{ uid: string; email: string }>;
+  sendMagicCode(email: string): Promise<void>;
 
   /**
-   * Sign up with email and password
+   * Verify the magic code to authenticate the user
    */
-  signUp(email: string, password: string): Promise<{ uid: string; email: string }>;
+  verifyMagicCode(email: string, code: string): Promise<{ uid: string; email: string }>;
 
   /**
    * Sign out the current user

@@ -1,0 +1,65 @@
+# sspirial.systems - Full System Specification & Documentation
+
+This document contains a comprehensive technical specification, architectural layout, and manifesto for sspirial.systems, curated for Large Language Models and AI agents.
+
+---
+
+## 1. Technical Stack & Architecture
+
+sspirial.systems is built using a clean **Core-Shell Architecture** designed for high modularity, local-first performance, and $0 monthly hosting costs:
+
+```
+[UI Shell Pages] -> [React Hooks] -> [Service Registry] -> [Abstract Contracts]
+                                                                ^
+                                                        [InstantDB Implementation]
+```
+
+### Core Services
+All business rules and domain models are stored inside `@core/`. Runtimes interact with data strictly through abstract TypeScript contracts defined in `@core/services`:
+- `DatabaseService`: Handles fetches, updates, and subscriptions.
+- `AuthService`: Handles logins, magic-links, and active sessions.
+- `StorageService`: Converts local binary files to data URLs (Base64) for document database embedding.
+
+### Shell Implementation
+The UI runtime (`src/shell/`) provides the concrete adapters:
+- **InstantDBDatabase**: Adapts the core `DatabaseService` using InstantDB's client SDK. Automatically manages UUID translations for human-readable string IDs (like `site` and `manifesto`) through deterministic string hashing.
+- **InstantDBAuth**: Adapts `AuthService` utilizing InstantDB's magic-link OTP flow.
+- **Base64StorageService**: Adapts `StorageService` to convert client-side uploads to base64 strings, embedding files directly inside InstantDB collections to eliminate external storage bucket charges.
+
+---
+
+## 2. Core Heuristics & Values
+
+### Heuristic A: Build for $0
+Web architecture is bloated with expensive monthly SaaS bills. We prioritize free, high-performance serverless tiers:
+- **Static Hosting**: Deployed to global CDNs (Firebase Hosting) with zero configuration.
+- **Serverless DB**: Uses InstantDB's free multiplayer network layer.
+- **Embedded Storage**: By converting binary assets (like project logos) to base64 and nesting them inside database documents, we remove the need for S3-compatible cloud storage.
+
+### Heuristic B: Local-First
+Network latency is a bottleneck. Data is written and stored locally first, then asynchronously synchronized to the cloud over WebSockets using reactive loops.
+
+### Heuristic C: Agent Organisms
+Systems are modeled as autonomous loops of action-reaction agents (e.g. Aether, Chronos) that listen to changes and execute state updates, rather than rigid synchronous pipelines.
+
+---
+
+## 3. Terminal Interface Specs
+The landing page console is a fully responsive simulated terminal:
+- **`help`**: Displays command index.
+- **`status`**: Shows connection states (InstantDB WS connection status) and local performance metrics.
+- **`manifesto`**: Streams the R&D values.
+- **`projects`**: Fetches all projects from the registry.
+- **`projects <title>`**: Searches for a matching project and returns its technical version number, stack, and details.
+- **`agents`**: Lists active background processes and logs.
+- **`llms.txt`**: Outputs the index file contents.
+
+---
+
+## 4. Administrative Control Panel
+An administrative interface is located at `/admin` (requires login under the configured OWNER_EMAIL `em.munubi@gmail.com`). 
+The Admin panel enables real-time edits for:
+- Main metadata configurations (hero descriptions, taglines, availability status).
+- The Project Registry (adding versions, markdown READMEs, logo uploads).
+- The Research Tree (folders, files, markdown contents).
+- The Axiomatic Principles and System Evolution Log (milestones).

@@ -6,19 +6,19 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { ServiceRegistry } from '@core/services';
-import { FirebaseDatabase, FirebaseAuth, FirebaseStorage } from '@shell/services/firebase-impl';
+import { InstantDBDatabase, InstantDBAuth, Base64StorageService } from '@shell/services/instantdb-impl';
 
 // Create context
 const ServicesContext = createContext<ServiceRegistry | null>(null);
 
 /**
- * Initialize Firebase services (can be replaced with other providers)
+ * Initialize services (InstantDB for database & auth, Base64Storage for assets)
  */
 const initializeServices = (): ServiceRegistry => {
   return {
-    database: new FirebaseDatabase(),
-    auth: new FirebaseAuth(),
-    storage: new FirebaseStorage(),
+    database: new InstantDBDatabase(),
+    auth: new InstantDBAuth(),
+    storage: new Base64StorageService(),
   };
 };
 

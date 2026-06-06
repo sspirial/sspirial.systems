@@ -1,0 +1,28 @@
+# sspirial.systems
+
+> sspirial.systems is an independent R&D systems studio and autonomous agents lab. We design local-first, zero-infrastructure systems architectures, lightweight tools, and reactive agent pipelines.
+
+## Navigation & Entry Points
+
+- [/](https://sspirial.systems/): Landing page with simulated command line terminal interface.
+- [/projects](https://sspirial.systems/projects): Project Registry Index. Contains deployed prototypes, whitepapers, and versions.
+- [/research](https://sspirial.systems/research): Lab/Knowledge File Tree Explorer. Monospaced split-screen browser containing detailed research logs and technical notes.
+- [/about](https://sspirial.systems/about): Studio Manifesto, Core Philosophy, Axiomatic Principles, and chronological System Evolution Log.
+- [/login](https://sspirial.systems/login): Secure Admin Login (OTP/Magic-Link verification).
+
+## Core Heuristics & Design Axioms
+
+- **Build for $0**: No active monthly infrastructure costs. Database, file storage (embedded base64), and hosting run entirely on serverless and client-side layers.
+- **Local-First**: Data belongs to the device. Network synchronization is a convenience layer, not a hard barrier.
+- **Agent Organisms**: Systems are modeled as reactive loops of autonomous agents, rather than rigid monolithic code pipelines.
+
+## Developer & Agent API (via Terminal)
+
+The landing page features an interactive terminal console that responds to commands. You can query the system by entering commands:
+- `help`: Lists all available commands.
+- `status`: Returns system metrics, database connection status, uptime, and host node metadata.
+- `manifesto`: Streams the R&D values and core principles.
+- `projects`: Returns a formatted index of all projects in the database.
+- `projects <name>`: Inspects a specific project node's description and metadata.
+- `agents`: Monitors active autonomous R&D subagents and their logs.
+- `llms.txt`: Prints this index representation to the console screen.

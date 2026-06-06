@@ -9,7 +9,6 @@ const loadFonts = () => {
   import('@fontsource/plus-jakarta-sans');
   import('@fontsource/jetbrains-mono');
   import('@fontsource/noto-sans');
-  import('material-symbols/outlined.css');
 };
 
 const rootElement = document.getElementById('root');

@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { collection, doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Project, ResearchPost, TimelineItem, Heuristic, Manifesto, Self, SiteConfig } from '@core/types';
-import { db, storage } from '@shell/firebase';
+import { useDatabase, useStorage } from '@shell/contexts/ServicesContext';
 import { useAuth } from '@shell/contexts/AuthContext';
 import { useProjects } from '@shell/hooks/useProjects';
 import { useResearchPosts } from '@shell/hooks/useResearchPosts';
@@ -14,17 +12,18 @@ import { useSiteConfig } from '@shell/hooks/useSiteConfig';
 import { MarkdownViewer } from '@shell/components/MarkdownViewer';
 import { fetchReadme, fetchResearchDoc } from '@shell/services/github-impl';
 import { isServiceWorkerActive } from '@shell/utils/serviceWorkerManager';
+import { db } from '@shell/services/instantdb-impl';
 
 type TabKey = 'projects' | 'research' | 'timeline' | 'heuristics' | 'manifesto' | 'siteConfig' | 'legal';
 type EditableItem = (Project | ResearchPost | TimelineItem) & { __key?: string };
 
-const inputClass = 'w-full rounded-lg border border-gray-200 dark:border-white/10 bg-surface-light dark:bg-surface-dark px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/70';
-const textAreaClass = `${inputClass} min-h-[80px]`;
-const btnBase = 'px-3 py-2 rounded-lg text-sm font-medium transition-colors';
-const btnMuted = `${btnBase} bg-gray-100 dark:bg-white/10 text-slate-700 dark:text-slate-100 hover:bg-gray-200 dark:hover:bg-white/20`;
-const btnPrimary = `${btnBase} bg-primary/10 text-primary border border-primary hover:bg-primary hover:text-white`;
-const btnStrong = `${btnBase} bg-primary text-white hover:bg-primary/90 disabled:opacity-60`;
-const btnAccent = `${btnBase} bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60`;
+const inputClass = 'w-full rounded border border-gray-200 dark:border-white/5 bg-white/40 dark:bg-zinc-950/60 px-3 py-2 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors';
+const textAreaClass = `${inputClass} min-h-[100px]`;
+const btnBase = 'px-4 py-2 rounded text-xs font-mono font-bold transition-all';
+const btnMuted = `${btnBase} bg-gray-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-gray-200 dark:border-white/5 hover:bg-gray-200 dark:hover:bg-zinc-700`;
+const btnPrimary = `${btnBase} bg-primary/10 text-primary border border-primary/30 hover:bg-primary/25`;
+const btnStrong = `${btnBase} bg-primary text-background-dark hover:scale-[1.01] active:scale-95 disabled:opacity-60`;
+const btnAccent = `${btnBase} bg-emerald-600/10 text-emerald-500 border border-emerald-500/30 hover:bg-emerald-600/20 disabled:opacity-60`;
 
 const tabLabels: Record<TabKey, string> = {
   projects: 'Projects',
@@ -125,6 +124,9 @@ const materialIconOptions = [
 
 const Admin: React.FC = () => {
   const { logout } = useAuth();
+  const database = useDatabase();
+  const storageService = useStorage();
+  const connectionStatus = db.useConnectionStatus();
   const [activeTab, setActiveTabState] = useState<TabKey>('projects');
   const [pendingTab, setPendingTab] = useState<TabKey | null>(null);
   const [offlineEnabled, setOfflineEnabled] = useState(false);
@@ -395,15 +397,12 @@ const Admin: React.FC = () => {
     try {
       if (activeTab === 'siteConfig' || activeTab === 'legal') {
         // Save site config (includes legal)
-        const siteConfigRef = doc(db, 'config', 'site');
-        await setDoc(siteConfigRef, siteConfig);
-        console.log('✅ Site config saved to Firestore:', siteConfig);
-        setMessage({ type: 'success', text: 'Configuration saved. Changes will sync when online.' });
+        await database.saveDocument('config', 'site', siteConfig);
+        console.log('✅ Site config saved to InstantDB:', siteConfig);
+        setMessage({ type: 'success', text: 'Configuration saved.' });
       } else if (activeTab === 'heuristics') {
         // Save heuristics to manifesto config document
-        const manifestoRef = doc(db, 'config', 'manifesto');
-        const manifestoSnap = await getDoc(manifestoRef);
-        const currentData = manifestoSnap.exists() ? manifestoSnap.data() : {};
+        const currentData = await database.fetchDocument<any>('config', 'manifesto') || {};
         const payload = {
           ...currentData,
           program: {
@@ -411,19 +410,17 @@ const Admin: React.FC = () => {
             items: heuristics
           }
         };
-        await setDoc(manifestoRef, payload);
-        console.log('✅ Heuristics saved to Firestore:', payload);
-        setMessage({ type: 'success', text: 'Heuristics saved. Changes will sync when online.' });
+        await database.saveDocument('config', 'manifesto', payload);
+        console.log('✅ Heuristics saved to InstantDB:', payload);
+        setMessage({ type: 'success', text: 'Heuristics saved.' });
       } else if (activeTab === 'manifesto') {
         // Save full manifesto
-        const manifestoRef = doc(db, 'config', 'manifesto');
         const payload = sanitizeManifesto(manifesto);
-        await setDoc(manifestoRef, payload);
-        console.log('✅ Manifesto saved to Firestore:', payload);
-        setMessage({ type: 'success', text: 'Manifesto saved. Changes will sync when online.' });
+        await database.saveDocument('config', 'manifesto', payload);
+        console.log('✅ Manifesto saved to InstantDB:', payload);
+        setMessage({ type: 'success', text: 'Manifesto saved.' });
       } else {
         // Save collection-based data (projects, research, timeline)
-        const batch = writeBatch(db);
         const collectionName = activeTab;
 
         // Find deleted items (in original but not in current)
@@ -436,33 +433,30 @@ const Admin: React.FC = () => {
         });
 
         // Delete removed items
-        deletedItems.forEach((item) => {
+        for (const item of deletedItems) {
           const id = (item as any).id || (item as any).version || item.__key;
           if (id) {
-            const docRef = doc(db, collectionName, id);
-            batch.delete(docRef);
+            await database.deleteDocument(collectionName, id);
             console.log(`🗑️ Deleting ${collectionName}/${id}`);
           }
-        });
+        }
 
         // Update/create current items
-        items.forEach((item) => {
+        for (const item of items) {
           const id = (item as any).id || (item as any).version || item.__key || crypto.randomUUID();
-          const docRef = doc(db, collectionName, id);
           const { __key, ...data } = item as any;
-          batch.set(docRef, { ...data, id });
-        });
+          await database.saveDocument(collectionName, id, { ...data, id });
+        }
 
-        await batch.commit();
-        console.log(`✅ ${collectionName} saved to Firestore (${items.length} items, ${deletedItems.length} deleted)`);
-        setMessage({ type: 'success', text: `${items.length} item(s) saved, ${deletedItems.length} deleted. Will sync when online.` });
+        console.log(`✅ ${collectionName} saved to InstantDB (${items.length} items, ${deletedItems.length} deleted)`);
+        setMessage({ type: 'success', text: `${items.length} item(s) saved, ${deletedItems.length} deleted.` });
         
         setHasUnsavedChanges(false);
         // Update original items to reflect saved state (no more pending changes)
         setOriginalItems([...items]);
       }
     } catch (error) {
-      console.error('❌ Error saving to Firestore:', error);
+      console.error('❌ Error saving to InstantDB:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setMessage({ type: 'error', text: `Failed to save: ${errorMessage}` });
     } finally {
@@ -494,13 +488,9 @@ const Admin: React.FC = () => {
       // Create a unique filename with timestamp
       const timestamp = Date.now();
       const fileName = `${imageType}-${timestamp}-${file.name}`;
-      const storageRef = ref(storage, `site-images/${fileName}`);
 
-      // Upload the file
-      await uploadBytes(storageRef, file);
-
-      // Get the download URL
-      const downloadURL = await getDownloadURL(storageRef);
+      // Upload the file using StorageService abstraction (encodes as base64 data URL)
+      const downloadURL = await storageService.uploadFile('site-images', fileName, file);
 
       // Update the site config with the new URL
       if (imageType === 'hero') {
@@ -1827,68 +1817,89 @@ const Admin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark p-8">
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
+    <div className="min-h-screen bg-background-light dark:bg-background-dark p-8 cyber-grid transition-colors duration-300">
+      
+      {/* Decorative background glows */}
+      <div className="glow-spot w-[300px] h-[300px] bg-primary/10 top-24 left-10 dark:bg-primary/5" />
+      <div className="glow-spot w-[300px] h-[300px] bg-accent/10 bottom-24 right-10 dark:bg-accent/5" />
+
+      <div className="max-w-6xl mx-auto relative z-10 text-left">
+        
+        {/* Header */}
+        <header className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 dark:border-white/10 pb-6">
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <p className="text-xs uppercase tracking-[0.2em] text-amber-400">Systems Operational</p>
+            <div className="flex flex-wrap items-center gap-3 mb-1">
+              <span className="font-mono text-[10px] tracking-widest text-[#616f89] dark:text-gray-400 bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-white/5 px-2.5 py-1 rounded">
+                SYS_CONTROL_ROOM
+              </span>
+              <div className="flex items-center gap-2 px-3 py-1 bg-white dark:bg-zinc-900 rounded border border-gray-200 dark:border-white/5">
+                <span className={`w-2 h-2 rounded-full ${
+                  connectionStatus === 'authenticated' ? 'bg-emerald-500 animate-pulse' :
+                  connectionStatus === 'opened' || connectionStatus === 'connecting' ? 'bg-amber-500 animate-pulse' : 'bg-red-500'
+                }`} />
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-800 dark:text-gray-300">
+                  DB_SYNC: {connectionStatus === 'authenticated' ? 'CONNECTED' : connectionStatus.toUpperCase()}
+                </span>
+              </div>
               {offlineEnabled && (
                 <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  <span className="text-[10px] font-mono font-medium text-emerald-400 uppercase tracking-wider">Offline Mode Active</span>
+                  <span className="text-[10px] font-mono font-medium text-emerald-400 uppercase tracking-wider">Offline Cache</span>
                 </div>
               )}
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">System Admin</h1>
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">System Control Deck</h1>
           </div>
           <div className="flex gap-3 text-sm">
-            <button onClick={logout} className="px-3 py-2 rounded-lg bg-gray-100 dark:bg-white/10 text-slate-700 dark:text-slate-100 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">
-              Logout
+            <button onClick={logout} className={btnMuted}>
+              SHUTDOWN_SESSION
             </button>
-            <a href="/" className="px-3 py-2 rounded-lg border border-primary text-primary hover:bg-primary hover:text-white transition-colors">Back to Site</a>
+            <a href="/" className="flex h-9 items-center justify-center border border-primary text-primary px-4 rounded font-mono text-xs font-bold bg-primary/5 hover:bg-primary/10 transition-colors">
+              EXIT_TO_SITE
+            </a>
           </div>
         </header>
 
-        <div className="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
-          <div className="flex border-b border-gray-200 dark:border-white/10 bg-gray-50/70 dark:bg-white/5">
+        {/* Tab Panel Card */}
+        <div className="glass-panel rounded-xl shadow-2xl overflow-hidden">
+          <div className="flex flex-wrap border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-zinc-900/50 backdrop-blur-md">
             {(Object.keys(tabLabels) as TabKey[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => handleSetActiveTab(tab)}
-                className={`px-6 py-4 text-sm font-semibold transition-colors ${
+                className={`px-5 py-3.5 text-xs font-mono font-bold transition-all border-r border-gray-200 dark:border-white/5 ${
                   activeTab === tab
-                    ? 'text-primary border-b-2 border-primary bg-surface-light dark:bg-surface-dark'
-                    : 'text-slate-600 dark:text-slate-300 hover:text-primary'
+                    ? 'text-primary bg-white dark:bg-black/40 border-b-2 border-b-primary'
+                    : 'text-slate-600 dark:text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-zinc-800/20'
                 }`}
               >
-                {tabLabels[tab]}
+                {tabLabels[tab].toUpperCase()}.sys
               </button>
             ))}
           </div>
 
           <div className="p-6 space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 dark:border-white/5 pb-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Editing</p>
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">{tabLabels[activeTab]}</h2>
+                <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">&gt; ACTIVE_SECTION</p>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white font-mono">{tabLabels[activeTab].toUpperCase()}</h2>
                 {hasUnsavedChanges && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-1">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                    Unsaved local changes
+                  <p className="text-[10px] font-mono text-amber-500 flex items-center gap-1.5 mt-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    DIRTY_CHANGES_DETECTED
                   </p>
                 )}
               </div>
               <div className="flex flex-wrap gap-2 text-sm">
                 {!['heuristics', 'manifesto', 'siteConfig', 'legal'].includes(activeTab) && (
-                  <button onClick={handleAddItem} className={btnPrimary}>Add Entry</button>
+                  <button onClick={handleAddItem} className={btnPrimary}>ADD_ENTRY.sh</button>
                 )}
                 {hasUnsavedChanges && (
                   <button 
                     onClick={handleDiscardChanges} 
                     className={btnMuted}
                   >
-                    Discard Changes
+                    DISCARD_LOCAL
                   </button>
                 )}
                 <button 
@@ -1896,20 +1907,20 @@ const Admin: React.FC = () => {
                   disabled={saving || !hasUnsavedChanges} 
                   className={`${btnStrong} ${!hasUnsavedChanges && !saving ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  {saving ? 'Syncing…' : hasUnsavedChanges ? 'Sync to Cloud' : 'All Synced ✓'}
+                  {saving ? 'SYNCING_TO_DATABASE...' : hasUnsavedChanges ? 'COMMIT_TO_DATABASE.sh' : 'DATABASE_IN_SYNC ✓'}
                 </button>
               </div>
             </div>
 
             {message && (
               <div
-                className={`rounded-lg border px-4 py-3 text-sm ${
+                className={`rounded border px-4 py-3 text-xs font-mono ${
                   message.type === 'success'
-                    ? 'border-green-200 bg-green-50 text-green-800'
-                    : 'border-red-200 bg-red-50 text-red-800'
+                    ? 'border-green-200 bg-green-500/10 text-green-700 dark:text-green-400'
+                    : 'border-red-200 bg-red-500/10 text-red-700 dark:text-red-400'
                 }`}
               >
-                {message.text}
+                {message.type.toUpperCase()}: {message.text}
               </div>
             )}
 

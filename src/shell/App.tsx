@@ -50,10 +50,12 @@ const Header: React.FC<{ darkMode: boolean; setDarkMode: (v: boolean) => void }>
       <Link to="/" className="flex items-center gap-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label="Go to homepage">
         <LogoIcon />
         <h2 className="text-[#111318] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">sspirial.systems</h2>
-        <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20" aria-live="polite">
-          <span className="w-2 h-2 rounded-full bg-primary animate-pulse" aria-hidden="true"></span>
-          <span className="text-xs font-mono font-medium text-primary uppercase tracking-wider">Systems Operational</span>
-        </div>
+        {import.meta.env.DEV && (
+          <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20" aria-live="polite">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" aria-hidden="true"></span>
+            <span className="text-xs font-mono font-medium text-primary uppercase tracking-wider">Systems Operational</span>
+          </div>
+        )}
       </Link>
       <div className="flex items-center gap-6">
         <nav className="hidden md:flex items-center gap-8" aria-label="Primary">
@@ -197,7 +199,7 @@ const AppContent: React.FC = () => {
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:id" element={<ProjectView />} />
             <Route path="/research" element={<Research />} />
-            <Route path="/research/:id" element={<ResearchView />} />
+            <Route path="/research/:id" element={<Research />} />
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />

@@ -18,7 +18,7 @@ body {
 
 /* Accessible focus outlines for keyboard navigation */
 :focus-visible {
-    outline: 2px solid #6C9BF2; /* matches primary */
+    outline: 2px solid #FCA311; /* matches primary */
     outline-offset: 2px;
 }
 
@@ -41,5 +41,131 @@ body {
 }
 .skip-link:focus {
     transform: translateY(0%);
-    border-color: #6C9BF2;
+    border-color: #FCA311;
+}
+
+/* Cybernetic Grid & Glow System */
+.cyber-grid {
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: center center;
+}
+.dark .cyber-grid {
+    background-image: 
+        linear-gradient(rgba(252, 163, 17, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(252, 163, 17, 0.015) 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+
+.cyber-grid-fine {
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 8px 8px;
+}
+.dark .cyber-grid-fine {
+    background-image: 
+        linear-gradient(rgba(252, 163, 17, 0.005) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(252, 163, 17, 0.005) 1px, transparent 1px);
+    background-size: 8px 8px;
+}
+
+.glow-spot {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.15;
+}
+.dark .glow-spot {
+    opacity: 0.18;
+}
+
+/* Custom terminal scanline & blink effects */
+.scanline {
+    background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0),
+        rgba(255, 255, 255, 0) 50%,
+        rgba(0, 0, 0, 0.3) 50%,
+        rgba(0, 0, 0, 0.3)
+    );
+    background-size: 100% 4px;
+}
+.dark .scanline {
+    background: linear-gradient(
+        to bottom,
+        rgba(124, 58, 237, 0),
+        rgba(124, 58, 237, 0) 50%,
+        rgba(252, 163, 17, 0.02) 50%,
+        rgba(252, 163, 17, 0.02)
+    );
+    background-size: 100% 4px;
+}
+
+@keyframes terminal-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.cursor-blink {
+    animation: terminal-blink 1s step-end infinite;
+}
+
+/* Custom premium scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb {
+    background: rgba(252, 163, 17, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #FCA311;
+}
+
+/* Glassmorphism containers */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.dark .glass-panel {
+    background: rgba(10, 10, 10, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(252, 163, 17, 0.06);
+}
+
+.dark .glass-panel-hover:hover {
+    border-color: rgba(252, 163, 17, 0.25);
+    box-shadow: 0 0 25px rgba(252, 163, 17, 0.05);
+    transform: translateY(-2px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel-hover {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-panel-hover:hover {
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+    transform: translateY(-2px);
 }
